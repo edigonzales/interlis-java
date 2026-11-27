@@ -25,6 +25,7 @@ import static guru.interlis.db.Smart2LinkExtensionFixtures.specialized;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class ModelExtensionStorageTest {
     private static final PostgisTestServer POSTGIS = new PostgisTestServer();
@@ -36,11 +37,12 @@ final class ModelExtensionStorageTest {
         POSTGIS.close();
     }
 
+
     @ParameterizedTest(name = "{0}, XTF {1}, {2}")
     @CsvSource({"GEOPACKAGE,23,newClass", "GEOPACKAGE,24,newClass", "POSTGIS,23,newClass", "POSTGIS,24,newClass",
             "GEOPACKAGE,23,strict", "GEOPACKAGE,24,strict", "POSTGIS,23,strict", "POSTGIS,24,strict",
             "GEOPACKAGE,23,smart2", "GEOPACKAGE,24,smart2", "POSTGIS,23,smart2", "POSTGIS,24,smart2"})
-    void addModelsIsTransactionalAndCanBeRetried(Backend backend, int version, String profile) throws Exception {
+    void sharedStructureRejectsNewOwnerColumn(Backend backend, int version, String profile) throws Exception {
         boolean smart2 = profile.equals("smart2");
         var fixture = new ModelExtensionFixtures(work, version, profile);
         var db = POSTGIS.target(work.resolve("extension.gpkg"), backend);
@@ -57,31 +59,53 @@ final class ModelExtensionStorageTest {
             assertCliFailure(db, "schemaimport", fixture.added, null, fixture.addedSource,
                     "conflict with the existing ili2db SETTINGS", "--add-models", "--model-file", fixture.sharedSource.toString(),
                     "--default-epsg", "21781");
+
+            var result = DbTestSupport.cli(db, "schemaimport", fixture.added, null, fixture.addedSource,
+                    cancelDuringDdl(new AtomicInteger(), 1), "--add-models", "--model-file", fixture.sharedSource.toString());
+            assertEquals(1, result.code(), result::diagnostics);
+            assertTrue(result.diagnostics().contains("would change existing table detail for " + fixture.added + ".Data."),
+                    result::diagnostics);
+            assertTrue(result.diagnostics().contains("requires a structure owner column"), result::diagnostics);
             before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
             assertEquals(ids, fixture.originalIds(db, sql));
-
-            var checkpoints = new AtomicInteger();
-            int checkpoint = smart2 ? 3 : 2;
-            var cancelled = schemaWithIdentityColumns(db, fixture.added, fixture.addedSource, cancelDuringDdl(checkpoints, checkpoint),
-                    "--add-models", "--model-file", fixture.sharedSource.toString());
-            assertEquals(130, cancelled.code(), cancelled::diagnostics);
-            assertEquals(checkpoint, checkpoints.get());
-            before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
-            assertEquals(ids, fixture.originalIds(db, sql));
-
-            fixture.extend(db);
-            String table = fixture.assertExtension(db, sql, before, ids);
-            fixture.removeSources();
-            assertCliSuccess(db, "import", fixture.added, "added", fixture.addedDelivery("native"));
+            fixture.assertOwnedDetails(db, sql, fixture.original, "report", "fixture");
             Path output = work.resolve("original.xtf");
             assertCliSuccess(db, "export", fixture.original, "original", output);
             fixture.assertOriginalDelivery(output);
-            output = work.resolve("added.xtf");
-            assertCliSuccess(db, "export", fixture.added, "added", output);
-            fixture.assertAddedDelivery(output, "native");
-            fixture.assertOwnedDetails(db, sql, fixture.original, "report", "fixture");
-            fixture.assertOwnedDetails(db, sql, fixture.added, table, "native");
-            assertEquals(ids, fixture.originalIds(db, sql));
+        }
+    }
+
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void strictSchemaAddsNewTableWithMandatoryColumns(Backend backend, int version) throws Exception {
+        var fixture = new ProfileFixtures(work, version);
+        var db = POSTGIS.target(work.resolve("strict-addition.gpkg"), backend);
+        String original = "OriginalStrict";
+        String addition = "AddedStrict";
+        DbTestSupport.assertSchemaWithIdentityColumns(db, original,
+                fixture.source(original, "CLASS Entry = Label : MANDATORY TEXT*20; END Entry;"), "--sql-not-null");
+        assertCliSuccess(db, "import", original, "original", fixture.data(original, "original",
+                fixture.object(original, "Entry", "original-entry", "<Label>original</Label>")));
+
+        var source = fixture.source(addition, "CLASS Survey = Label : MANDATORY TEXT*20; Notes : TEXT*20; END Survey;");
+        try (var sql = db.connect(); var statement = sql.createStatement()) {
+            String originalSql = "SELECT t_id || ':' || t_basket || ':' || label FROM " + db.table("entry");
+            String existing = scalar(sql, originalSql);
+            var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
+            var checkpoints = new AtomicInteger();
+            var cancelled = schemaWithIdentityColumns(db, addition, source, cancelDuringDdl(checkpoints, 2), "--add-models");
+            assertEquals(130, cancelled.code(), cancelled::diagnostics);
+            assertEquals(2, checkpoints.get());
+            before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
+            assertEquals(existing, scalar(sql, originalSql));
+
+            assertCliSuccess(db, "schemaimport", addition, null, source, "--add-models");
+            assertCliSuccess(db, "import", addition, "added", fixture.data(addition, "added",
+                    fixture.object(addition, "Survey", "added-survey", "<Label>added</Label>")));
+            String table = db.table("survey");
+            assertEquals("added", scalar(sql, "SELECT label FROM " + table + " WHERE notes IS NULL"));
+            assertThrows(SQLException.class, () -> statement.executeUpdate("UPDATE " + table + " SET label = NULL"));
+            assertEquals(existing, scalar(sql, originalSql));
         }
     }
 
@@ -120,14 +144,16 @@ final class ModelExtensionStorageTest {
         }
     }
 
+
     @ParameterizedTest(name = "{0}, XTF {1}")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void smart2RejectsExpansionOfEmbeddedLinkWithAttributes(Backend backend, int version) throws Exception {
         var fixture = new SmartModelExtensionFixtures(work, version, false, false);
         var db = POSTGIS.target(work.resolve("referenced-hierarchy.gpkg"), backend);
         String survey = "ExistingSurvey" + version;
-        var linkSource = fixture.externalRoleSource(survey, "BaseAsset");
-        Files.writeString(linkSource, Files.readString(linkSource).replace("END ExactAssetLink;", "CommentText : TEXT*20; END ExactAssetLink;"));
+        var linkSource = fixture.externalRoleSource(survey, "Alternate");
+        Files.writeString(linkSource, Files.readString(linkSource)
+                .replace("END ExactAssetLink;", "CommentText : TEXT*20; END ExactAssetLink;"));
         DbTestSupport.assertSchemaWithIdentityColumns(db, survey, linkSource,
                 "--inheritance", "smart2", "--model-file", fixture.originalSource.toString());
         assertCliSuccess(db, "import", fixture.original, "original", fixture.input(fixture.original, "original"));
@@ -136,7 +162,7 @@ final class ModelExtensionStorageTest {
             var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
             var rows = fixture.originalRows(db);
             assertCliFailure(db, "schemaimport", fixture.specialized, null, fixture.specializedSource(),
-                    "would change stored reference " + survey + ".Data.ExactAssetLink.ConcreteSite",
+                    "would change existing table exactassetlink for " + survey + ".Data.ExactAssetLink.ConcreteSite",
                     "--add-models", "--model-file", fixture.originalSource.toString());
             before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
             assertEquals(rows, fixture.originalRows(db));
@@ -145,36 +171,73 @@ final class ModelExtensionStorageTest {
 
     @ParameterizedTest(name = "{0}, XTF {1}")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
-    void smart2ExpandsStoredLinkTableAndRejectsDuplicateTargets(Backend backend, int version) throws Exception {
+    void smart2RejectsNewOwnerOfInheritedStructure(Backend backend, int version) throws Exception {
+        var fixture = new SmartModelExtensionFixtures(work, version, false, false);
+        Files.writeString(fixture.originalSource, Files.readString(fixture.originalSource)
+                .replace("TOPIC Data =", "STRUCTURE Detail = Caption : TEXT*20; END Detail;\n  TOPIC Data =")
+                .replace("CLASS BaseAsset (ABSTRACT) = Label", "CLASS BaseAsset (ABSTRACT) = Memo : Detail; Label"));
+        var db = POSTGIS.target(work.resolve("inherited-structure.gpkg"), backend);
+        DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource, "--inheritance", "smart2");
+        assertCliSuccess(db, "import", fixture.original, "original", fixture.input(fixture.original, "original"));
+        try (var sql = db.connect()) {
+            var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
+            var rows = fixture.originalRows(db);
+            assertCliFailure(db, "schemaimport", fixture.specialized, null, fixture.specializedSource(),
+                    "would change existing table detail for " + fixture.original + ".Data.BaseAsset.Memo",
+                    "--add-models", "--model-file", fixture.originalSource.toString());
+            before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
+            assertEquals(rows, fixture.originalRows(db));
+        }
+    }
+
+
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void smart2LinkTableRejectsNewTargetOutsideModelSelection(Backend backend, int version) throws Exception {
         var fixture = new Smart2LinkExtensionFixtures(work, version);
         var catalog = fixture.catalog;
-        var db = POSTGIS.target(work.resolve("widen-link.gpkg"), backend);
+        var db = POSTGIS.target(work.resolve("stored-link.gpkg"), backend);
         DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.survey, fixture.surveySource, "--inheritance", "smart2",
                 "--model-file", catalog.originalSource.toString(), "--create-fk", "--create-fk-idx");
         assertCliSuccess(db, "import", catalog.original, "original", catalog.input(catalog.original, "original"));
         assertCliSuccess(db, "import", fixture.survey, "old", fixture.linkInput("old", ORIGINAL));
         var source = catalog.specializedSource();
-        String link = db.table(tableFor(db, fixture.associationPath()));
-        String oldLink = "SELECT t_id || ':' || t_basket || ':' || visits || ':' || sites_entry FROM " + link
-                + " WHERE sites_entry IS NOT NULL";
-        try (var sql = db.connect(); var edit = sql.createStatement()) {
+        String linkTable = tableFor(db, fixture.associationPath());
+        String oldLink = "SELECT t_id || ':' || t_basket || ':' || visits || ':' || sites_entry FROM " + db.table(linkTable);
+        try (var sql = db.connect()) {
             var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
+            var foreignKeys = DbTestSupport.foreignKeyColumns(db, sql);
+            var indexes = DbTestSupport.indexColumns(db, sql);
             String original = scalar(sql, oldLink);
-            var cancelled = schemaWithIdentityColumns(db, catalog.specialized, source,
-                    cancelDuringDdl(new AtomicInteger(), 3), "--add-models", "--model-file", catalog.originalSource.toString());
-            assertEquals(130, cancelled.code(), cancelled::diagnostics);
-            before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
-            assertEquals(original, scalar(sql, oldLink));
-
-            assertCliSuccess(db, "schemaimport", catalog.specialized, null, source,
+            assertCliFailure(db, "schemaimport", catalog.specialized, null, source,
+                    "would change existing table " + linkTable + " for " + fixture.associationPath()
+                            + ".Sites (requires a reference column for specializedentry)",
                     "--add-models", "--model-file", catalog.originalSource.toString());
-            assertCliSuccess(db, "import", catalog.specialized, "catalog", catalog.specializedInput("catalog"));
-            var target = specialized("catalog");
-            assertCliSuccess(db, "import", fixture.survey, "new", fixture.linkInput("new", target));
+            before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
+            assertEquals(foreignKeys, DbTestSupport.foreignKeyColumns(db, sql));
+            assertEquals(indexes, DbTestSupport.indexColumns(db, sql));
             assertEquals(original, scalar(sql, oldLink));
+        }
+    }
+
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void smart2LinkExportRejectsMultipleStoredTargets(Backend backend, int version) throws Exception {
+        var fixture = new Smart2LinkExtensionFixtures(work, version);
+        var catalog = fixture.catalog;
+        var db = POSTGIS.target(work.resolve("polymorphic-link.gpkg"), backend);
+        DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.survey, fixture.surveySource, "--inheritance", "smart2",
+                "--model", catalog.specialized, "--model-file", catalog.originalSource.toString(),
+                "--model-file", catalog.specializedSource().toString(), "--create-fk");
+        assertCliSuccess(db, "import", catalog.original, "original", catalog.input(catalog.original, "original"));
+        assertCliSuccess(db, "import", catalog.specialized, "catalog", catalog.specializedInput("catalog"));
+        var target = specialized("catalog");
+        assertCliSuccess(db, "import", fixture.survey, "new", fixture.linkInput("new", target));
+        String link = db.table(tableFor(db, fixture.associationPath()));
+        try (var sql = db.connect(); var edit = sql.createStatement()) {
             String targetId = scalar(sql, "SELECT t_id FROM " + db.table("specializedentry") + " WHERE t_ili_tid='catalog-specialized'");
             assertEquals(targetId, scalar(sql, "SELECT sites_specializedentry FROM " + link
-                    + " WHERE sites_specializedentry IS NOT NULL AND sites_entry IS NULL AND sites_alternate IS NULL"));
+                    + " WHERE sites_entry IS NULL AND sites_alternate IS NULL"));
             Path output = work.resolve("links.xtf");
             assertCliSuccess(db, "export", fixture.survey, "new", output);
             fixture.assertLinks(output, "new", true, target);
@@ -187,31 +250,39 @@ final class ModelExtensionStorageTest {
         }
     }
 
+
     @ParameterizedTest(name = "{0}, XTF {1}")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
-    void smart2RetargetsPreviouslySingleRoleWithoutRenamingItsColumn(Backend backend, int version) throws Exception {
+    void smart2RetargetsRoleWithLegacyUnsuffixedColumn(Backend backend, int version) throws Exception {
         var fixture = new SmartReferenceExtensionFixtures(work, version);
         var catalog = fixture.catalog;
         catalog.leaveOnlyOriginalEntry();
-        var db = POSTGIS.target(work.resolve("single-role.gpkg"), backend);
+        var db = POSTGIS.target(work.resolve("legacy-role.gpkg"), backend);
         DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.survey, fixture.surveySource, "--inheritance", "smart2",
-                "--model-file", catalog.originalSource.toString(), "--create-fk", "--create-fk-idx");
-        assertCliSuccess(db, "import", catalog.original, "original", catalog.entryInput("original"));
-        assertCliSuccess(db, "import", fixture.survey, "survey", fixture.existingSurvey("survey", "original-entry", "original-basket"));
-        try (var sql = db.connect()) {
-            String row = " FROM " + db.table("surveyrecord") + " WHERE t_ili_tid='survey-record'";
-            String before = scalar(sql, "SELECT t_id || ':' || site" + row);
-            assertCliSuccess(db, "schemaimport", catalog.specialized, null, catalog.specializedSource(),
-                    "--add-models", "--model-file", catalog.originalSource.toString());
-            assertEquals(before, scalar(sql, "SELECT t_id || ':' || site" + row));
+                "--model", catalog.specialized, "--model-file", catalog.originalSource.toString(),
+                "--model-file", catalog.specializedSource().toString(), "--create-fk", "--create-fk-idx");
+        try (var sql = db.connect(); var edit = sql.createStatement()) {
+            String table = db.table("surveyrecord");
+            edit.executeUpdate("ALTER TABLE " + table + " RENAME COLUMN site_entry TO site");
+            assertEquals(1, edit.executeUpdate("UPDATE " + db.table("t_ili2db_attrname") + " SET sqlname='site'"
+                    + " WHERE colowner='surveyrecord' AND sqlname='site_entry'"));
+            assertEquals(1, edit.executeUpdate("UPDATE " + db.table("t_ili2db_column_prop") + " SET columnname='site'"
+                    + " WHERE tablename='surveyrecord' AND columnname='site_entry'"));
             assertEquals(Set.of("surveyrecord:site", "surveyrecord:site_specializedentry"),
                     DbTestSupport.indexColumns(db, sql).stream().filter(index -> index.startsWith("surveyrecord:site"))
                             .collect(Collectors.toSet()));
 
+            assertCliSuccess(db, "import", catalog.original, "original", catalog.entryInput("original"));
+            assertCliSuccess(db, "import", fixture.survey, "survey", fixture.existingSurvey("survey", "original-entry", "original-basket"));
+            String row = " FROM " + table + " WHERE t_ili_tid='survey-record'";
+            String before = scalar(sql, "SELECT t_id" + row);
+            assertEquals(scalar(sql, "SELECT t_id FROM " + db.table("entry") + " WHERE t_ili_tid='original-entry'"),
+                    scalar(sql, "SELECT site" + row));
+
             assertCliSuccess(db, "import", catalog.specialized, "new-target", catalog.specializedInput("new-target"));
             assertCliSuccess(db, "update", fixture.survey, "survey",
                     fixture.existingSurvey("survey", "new-target-specialized", "new-target-basket"));
-            assertEquals(before.substring(0, before.indexOf(':')), scalar(sql, "SELECT t_id" + row));
+            assertEquals(before, scalar(sql, "SELECT t_id" + row));
             assertEquals("1", scalar(sql, "SELECT COUNT(*)" + row + " AND site IS NULL"));
             var output = work.resolve("retargeted.xtf");
             assertCliSuccess(db, "export", fixture.survey, "survey", output);
@@ -221,15 +292,14 @@ final class ModelExtensionStorageTest {
 
     @ParameterizedTest(name = "{0}, XTF {1}")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
-    void smart2RejectsTwoPopulatedAlternativesOfExpandedReferenceAttribute(Backend backend, int version) throws Exception {
+    void smart2RejectsTwoPopulatedAlternativesOfReferenceAttribute(Backend backend, int version) throws Exception {
         var fixture = new SmartReferenceExtensionFixtures(work, version, true);
         var catalog = fixture.catalog;
         var db = POSTGIS.target(work.resolve("widen-attribute.gpkg"), backend);
         DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.survey, fixture.surveySource, "--inheritance", "smart2",
-                "--model-file", catalog.originalSource.toString(), "--create-fk");
+                "--model", catalog.specialized, "--model-file", catalog.originalSource.toString(),
+                "--model-file", catalog.specializedSource().toString(), "--create-fk");
         assertCliSuccess(db, "import", catalog.original, "original", catalog.input(catalog.original, "original"));
-        assertCliSuccess(db, "schemaimport", catalog.specialized, null, catalog.specializedSource(),
-                "--add-models", "--model-file", catalog.originalSource.toString());
         assertCliSuccess(db, "import", fixture.survey, "native", fixture.combined("native"), "--model", catalog.specialized);
         var output = work.resolve("attribute.xtf");
         assertCliSuccess(db, "export", fixture.survey, "native", output, "--model", catalog.specialized);
@@ -243,12 +313,13 @@ final class ModelExtensionStorageTest {
         assertEquals(before, Files.readString(output));
     }
 
+
     @ParameterizedTest(name = "{0}, XTF {1}")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
-    void smart2AddsPolymorphicTargetToStoredRoleAtomically(Backend backend, int version) throws Exception {
+    void smart2RejectsWideningAndReadsStoredRole(Backend backend, int version) throws Exception {
         var fixture = new SmartReferenceExtensionFixtures(work, version);
         var catalog = fixture.catalog;
-        var db = POSTGIS.target(work.resolve("widen-role.gpkg"), backend);
+        var db = POSTGIS.target(work.resolve("stored-role.gpkg"), backend);
         DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.survey, fixture.surveySource, "--inheritance", "smart2",
                 "--model-file", catalog.originalSource.toString(), "--create-fk", "--create-fk-idx");
         assertCliSuccess(db, "import", catalog.original, "original", catalog.input(catalog.original, "original"));
@@ -256,29 +327,21 @@ final class ModelExtensionStorageTest {
         var source = catalog.specializedSource();
         try (var sql = db.connect(); var edit = sql.createStatement()) {
             var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
-            String properties = db.table("t_ili2db_column_prop");
-            String siteEntry = " WHERE tablename='surveyrecord' AND columnname='site_entry'";
-            edit.executeUpdate("UPDATE " + properties + " SET setting='wrong'" + siteEntry);
-            var invalid = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
             assertCliFailure(db, "schemaimport", catalog.specialized, null, source,
-                    "Inconsistent COLUMN_PROP.foreignKey for " + fixture.referencePath(),
+                    "would change existing table surveyrecord for " + fixture.referencePath(),
                     "--add-models", "--model-file", catalog.originalSource.toString());
-            invalid.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
-            edit.executeUpdate("UPDATE " + properties + " SET setting='entry'" + siteEntry);
-
-            var checkpoints = new AtomicInteger();
-            var aborted = schemaWithIdentityColumns(db, catalog.specialized, source,
-                    cancelDuringDdl(checkpoints, 3), "--add-models", "--model-file", catalog.originalSource.toString());
-            assertEquals(130, aborted.code(), aborted::diagnostics);
             before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
 
-            assertCliSuccess(db, "schemaimport", catalog.specialized, null, source,
-                    "--add-models", "--model-file", catalog.originalSource.toString());
             var output = work.resolve("old-survey.xtf");
             assertCliSuccess(db, "export", fixture.survey, "survey", output);
             fixture.assertSurvey(output, "survey", "original-entry");
-            assertEquals("1", scalar(sql, "SELECT COUNT(*) FROM " + db.table("surveyrecord")
-                    + " WHERE site_entry IS NOT NULL AND site_specializedentry IS NULL"));
+            byte[] published = Files.readAllBytes(output);
+            String properties = db.table("t_ili2db_column_prop");
+            edit.executeUpdate("UPDATE " + properties + " SET setting='wrong'"
+                    + " WHERE tablename='surveyrecord' AND columnname='site_entry'");
+            assertCliFailure(db, "export", fixture.survey, "survey", output,
+                    "Inconsistent COLUMN_PROP.foreignKey for " + fixture.referencePath());
+            assertArrayEquals(published, Files.readAllBytes(output));
         }
     }
 
@@ -309,48 +372,40 @@ final class ModelExtensionStorageTest {
         }
     }
 
+
     @ParameterizedTest(name = "{0}, XTF {1}")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
-    void smart1SharedSubtypeKeepsOriginalRowsAndRollsBackAddedColumn(Backend backend, int version) throws Exception {
+    void smart1SharedTableRejectsNewSubtypeField(Backend backend, int version) throws Exception {
         var fixture = new SmartModelExtensionFixtures(work, version, false, true);
-        var db = POSTGIS.target(work.resolve("shared-subtype.gpkg"), backend);
+        var db = POSTGIS.target(work.resolve("new-shared-column.gpkg"), backend);
         DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource, "--inheritance", "smart1");
         assertCliSuccess(db, "import", fixture.original, "original", fixture.input(fixture.original, "original"));
         var source = fixture.specializedSource();
-        var rows = fixture.originalRows(db);
         try (var sql = db.connect()) {
             var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
-            var checkpoints = new AtomicInteger();
-            var cancelled = schemaWithIdentityColumns(db, fixture.specialized, source,
-                    cancelDuringDdl(checkpoints, 2), "--add-models", "--model-file", fixture.originalSource.toString());
-            assertEquals(130, cancelled.code(), cancelled::diagnostics);
-            before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
-
-            assertCliSuccess(db, "schemaimport", fixture.specialized, null, source,
+            var rows = fixture.originalRows(db);
+            assertCliFailure(db, "schemaimport", fixture.specialized, null, source,
+                    "would change existing table entry for " + fixture.specialized + ".Data.SpecializedEntry.Extra",
                     "--add-models", "--model-file", fixture.originalSource.toString());
-            assertEquals("2", scalar(sql, "SELECT COUNT(*) FROM " + db.table("entry") + " WHERE extra IS NULL"));
-            assertCliSuccess(db, "import", fixture.specialized, "added", fixture.specializedInput("added"));
+            before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
+            assertEquals(rows, fixture.originalRows(db));
             var output = work.resolve("shared-subtype.xtf");
-            assertCliSuccess(db, "export", fixture.specialized, "added", output);
-            fixture.assertSpecializedDelivery(output, "added");
             assertCliSuccess(db, "export", fixture.original, "original", output);
             fixture.assertDelivery(output, fixture.original, "original");
-            assertEquals(rows, fixture.originalRows(db));
         }
     }
 
+
     @ParameterizedTest(name = "{0}, XTF {1}")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
-    void smart1AddsScalarChecksToNewColumnsInTheSharedTable(Backend backend, int version) throws Exception {
+    void smart1SharedTableAppliesScalarChecksToSubtypeFields(Backend backend, int version) throws Exception {
         var fixture = new SmartModelExtensionFixtures(work, version, false, true);
         var db = POSTGIS.target(work.resolve("shared-scalar-checks.gpkg"), backend);
-        DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource,
-                "--inheritance", "smart1", "--create-num-checks", "--create-text-checks");
-        assertCliSuccess(db, "import", fixture.original, "original", fixture.input(fixture.original, "original"));
         var source = fixture.specializedSource();
         Files.writeString(source, Files.readString(source).replace("Extra : TEXT*20;", "Extra : TEXT*20; Score : 0..9;"));
-        assertCliSuccess(db, "schemaimport", fixture.specialized, null, source,
-                "--add-models", "--model-file", fixture.originalSource.toString());
+        DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource, "--model", fixture.specialized,
+                "--model-file", source.toString(), "--inheritance", "smart1", "--create-num-checks", "--create-text-checks");
+        assertCliSuccess(db, "import", fixture.original, "original", fixture.input(fixture.original, "original"));
         assertCliSuccess(db, "import", fixture.specialized, "added", fixture.specializedInput("added"));
         try (var sql = db.connect(); var statement = sql.createStatement()) {
             String table = db.table("entry");
@@ -364,33 +419,28 @@ final class ModelExtensionStorageTest {
         }
     }
 
+
     @ParameterizedTest(name = "{0}, XTF {1}")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
-    void smart1BackfillsFirstDiscriminatorAtomically(Backend backend, int version) throws Exception {
+    void smart1RejectsNewFragmentWhenRootLacksDiscriminator(Backend backend, int version) throws Exception {
         var fixture = new SmartModelExtensionFixtures(work, version, false, false);
         fixture.leaveOnlyOriginalEntry();
-        var db = POSTGIS.target(work.resolve("first-discriminator.gpkg"), backend);
+        var db = POSTGIS.target(work.resolve("missing-discriminator.gpkg"), backend);
         DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource, "--inheritance", "smart1");
         assertCliSuccess(db, "import", fixture.original, "original", fixture.entryInput("original"));
-        var source = fixture.specializedSource();
-        String originalRow = " FROM " + db.table("entry") + " WHERE t_ili_tid = 'original-entry'";
-        try (var sql = db.connect(); var statement = sql.createStatement()) {
+        var source = fixture.fragmentSource(fixture.specialized, "SpecializedEntry");
+        String originalRow = " FROM " + db.table("entry") + " WHERE t_ili_tid='original-entry'";
+        try (var sql = db.connect()) {
             var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
-            String id = scalar(sql, "SELECT t_id || ':' || t_basket" + originalRow);
-            var checkpoints = new AtomicInteger();
-            var cancelled = schemaWithIdentityColumns(db, fixture.specialized, source,
-                    cancelDuringDdl(checkpoints, 3), "--add-models", "--model-file", fixture.originalSource.toString());
-            assertEquals(130, cancelled.code(), cancelled::diagnostics);
-            before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
-
-            assertCliSuccess(db, "schemaimport", fixture.specialized, null, source,
+            String rowSql = "SELECT t_id || ':' || t_basket || ':' || label || ':' || quantity" + originalRow;
+            String row = scalar(sql, rowSql);
+            assertCliFailure(db, "schemaimport", fixture.specialized, null, source,
+                    "would change existing table entry for " + fixture.specialized
+                            + ".Data.SpecializedEntry (requires T_Type as a non-null discriminator)",
                     "--add-models", "--model-file", fixture.originalSource.toString());
-            assertEquals(id, scalar(sql, "SELECT t_id || ':' || t_basket" + originalRow));
-            assertEquals("entry", scalar(sql, "SELECT t_type" + originalRow));
-            String table = db.table("entry");
-            assertThrows(SQLException.class, () -> statement.executeUpdate("INSERT INTO " + table
-                    + " (t_id, t_basket) SELECT t_id + 100, t_basket" + originalRow));
-            var output = work.resolve("first-discriminator.xtf");
+            before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
+            assertEquals(row, scalar(sql, rowSql));
+            var output = work.resolve("original-entry.xtf");
             assertCliSuccess(db, "export", fixture.original, "original", output);
             fixture.assertEntryDelivery(output, "original");
         }
@@ -398,54 +448,72 @@ final class ModelExtensionStorageTest {
 
     @ParameterizedTest(name = "{0}, XTF {1}")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
-    void smart1RollsBackFragmentAndDiscriminatorBackfill(Backend backend, int version) throws Exception {
-        var fixture = new SmartModelExtensionFixtures(work, version, false, false);
-        fixture.leaveOnlyOriginalEntry();
-        var db = POSTGIS.target(work.resolve("fragment.gpkg"), backend);
-        DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource, "--inheritance", "smart1");
-        assertCliSuccess(db, "import", fixture.original, "original", fixture.entryInput("original"));
-        var source = fixture.fragmentSource(fixture.specialized, "SpecializedEntry");
-        String entry = db.table("entry");
-        String originalRow = " FROM " + entry + " WHERE t_ili_tid='original-entry'";
+    void newClassRejectsHierarchyExtensionWhenRootLacksDiscriminator(Backend backend, int version) throws Exception {
+        var fixture = new ProfileFixtures(work, version);
+        var original = fixture.source("Original", "CLASS Entry = Label : TEXT*20; END Entry;");
+        var added = Files.writeString(work.resolve("Added.ili"), """
+                INTERLIS 2.%d;
+                MODEL Added (en) AT "https://example.org/interlis/db" VERSION "1" =
+                  IMPORTS Original;
+                  TOPIC Data EXTENDS Original.Data =
+                    CLASS AdditionalEntry (ABSTRACT) EXTENDS Original.Data.Entry = END AdditionalEntry;
+                    CLASS ConcreteEntry EXTENDS AdditionalEntry = END ConcreteEntry;
+                  END Data;
+                END Added.
+                """.formatted(version - 20));
+        var db = POSTGIS.target(work.resolve("abstract-subtype.gpkg"), backend);
+        DbTestSupport.assertSchemaWithIdentityColumns(db, "Original", original);
+        var input = fixture.data("Original", "original",
+                fixture.object("Original", "Entry", "original-entry", "<Label>retained</Label>"));
+        assertCliSuccess(db, "import", "Original", "original", input);
         try (var sql = db.connect()) {
             var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
-            String row = scalar(sql, "SELECT t_id || ':' || t_basket || ':' || label || ':' || quantity" + originalRow);
-            var cancelled = schemaWithIdentityColumns(db, fixture.specialized, source,
-                    cancelDuringDdl(new AtomicInteger(), 4), "--add-models", "--model-file", fixture.originalSource.toString());
-            assertEquals(130, cancelled.code(), cancelled::diagnostics);
+            String entry = "SELECT t_id || ':' || label FROM " + db.table("entry");
+            var row = scalar(sql, entry);
+            var result = schemaWithIdentityColumns(db, "Added", added, CancellationToken.none(),
+                    "--add-models", "--model-file", original.toString());
+            assertEquals(1, result.code(), result::diagnostics);
+            assertTrue(result.diagnostics().contains("would change existing table entry for Added.Data."),
+                    result::diagnostics);
+            assertTrue(result.diagnostics().contains("requires T_Type as a non-null discriminator"), result::diagnostics);
             before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
-            assertEquals(row, scalar(sql, "SELECT t_id || ':' || t_basket || ':' || label || ':' || quantity" + originalRow));
-
-            assertCliSuccess(db, "schemaimport", fixture.specialized, null, source,
-                    "--add-models", "--model-file", fixture.originalSource.toString());
-            assertCliSuccess(db, "import", fixture.specialized, "new", fixture.fragmentInput(fixture.specialized, "SpecializedEntry", "new"));
-            assertEquals("entry", scalar(sql, "SELECT t_type" + originalRow));
-            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + entry + " e JOIN " + db.table("specializedentry")
-                    + " s ON s.t_id=e.t_id AND s.t_basket=e.t_basket WHERE e.t_type='specializedentry' AND s.score=5"));
+            assertEquals(row, scalar(sql, entry));
         }
     }
 
     @ParameterizedTest(name = "{0}, XTF {1}")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
-    void smart1SubtypeStructuresKeepExistingOwnersOnUpdateAndRollback(Backend backend, int version) throws Exception {
+    void smart1FragmentSharesIdentityWithRoot(Backend backend, int version) throws Exception {
+        var fixture = new SmartModelExtensionFixtures(work, version, false, false);
+        fixture.leaveOnlyOriginalEntry();
+        var db = POSTGIS.target(work.resolve("fragment.gpkg"), backend);
+        var source = fixture.fragmentSource(fixture.specialized, "SpecializedEntry");
+        DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource, "--inheritance", "smart1",
+                "--model", fixture.specialized, "--model-file", source.toString());
+        assertCliSuccess(db, "import", fixture.original, "original", fixture.entryInput("original"));
+        assertCliSuccess(db, "import", fixture.specialized, "new", fixture.fragmentInput(fixture.specialized, "SpecializedEntry", "new"));
+        String entry = db.table("entry");
+        try (var sql = db.connect()) {
+            assertEquals("entry", scalar(sql, "SELECT t_type FROM " + entry + " WHERE t_ili_tid='original-entry'"));
+            assertEquals("1", scalar(sql, "SELECT count(*) FROM " + entry + " e JOIN " + db.table("specializedentry")
+                    + " s ON s.t_id=e.t_id AND s.t_basket=e.t_basket WHERE e.t_type='specializedentry' AND s.score=5"));
+        }
+    }
+
+
+    @ParameterizedTest(name = "{0}, XTF {1}")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void smart1SubtypeStructureUpdatePreservesExistingOwners(Backend backend, int version) throws Exception {
         var fixture = new Smart1StructureExtensionFixtures(work, version);
         var db = POSTGIS.target(work.resolve("subtype-memos.gpkg"), backend);
-        DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource, "--inheritance", "smart1");
+        DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource, "--inheritance", "smart1",
+                "--model", fixture.subtype, "--model-file", fixture.subtypeSource.toString());
         assertCliSuccess(db, "import", fixture.original, "original", fixture.originalInput());
         String notes = db.table("memopart");
         String originalSql = "SELECT t_id || ':' || t_basket || ':' || entry_ownmemo || ':' || caption FROM " + notes
                 + " WHERE entry_ownmemo IS NOT NULL";
         try (var sql = db.connect()) {
-            var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
             String original = scalar(sql, originalSql);
-            var cancelled = schemaWithIdentityColumns(db, fixture.subtype, fixture.subtypeSource,
-                    cancelDuringDdl(new AtomicInteger(), 3), "--add-models", "--model-file", fixture.originalSource.toString());
-            assertEquals(130, cancelled.code(), cancelled::diagnostics);
-            before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
-            assertEquals(original, scalar(sql, originalSql));
-
-            assertCliSuccess(db, "schemaimport", fixture.subtype, null, fixture.subtypeSource,
-                    "--add-models", "--model-file", fixture.originalSource.toString());
             assertCliSuccess(db, "import", fixture.subtype, "new", fixture.subtypeInput("new", List.of("first", "second")));
             String parent = "SELECT t_id FROM " + db.table("entry") + " WHERE t_ili_tid='new-entry'";
             String parentId = scalar(sql, parent);
@@ -463,60 +531,28 @@ final class ModelExtensionStorageTest {
         }
     }
 
+
     @ParameterizedTest(name = "{0}, XTF {1}")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
-    void smart1ExtendsOnlyTheNamedTypeCheck(Backend backend, int version) throws Exception {
+    void smart1RejectsChangingExistingTypeCheck(Backend backend, int version) throws Exception {
         var fixture = new SmartModelExtensionFixtures(work, version, false, true);
         var db = POSTGIS.target(work.resolve("checked-subtype.gpkg"), backend);
         DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource,
                 "--inheritance", "smart1", "--create-type-constraint");
         assertCliSuccess(db, "import", fixture.original, "original", fixture.input(fixture.original, "original"));
         var source = fixture.specializedSource();
+        Files.writeString(source, Files.readString(source).replace("Extra : TEXT*20;", ""));
         String table = db.table("entry");
         try (var sql = db.connect(); var statement = sql.createStatement()) {
-            statement.execute("ALTER TABLE " + table + " ADD CONSTRAINT keep_quantity CHECK (quantity IS NULL OR quantity >= 0)");
-            var checkpoints = new AtomicInteger();
-            var cancelled = schemaWithIdentityColumns(db, fixture.specialized, source,
-                    cancelDuringDdl(checkpoints, 2), "--add-models", "--model-file", fixture.originalSource.toString());
-            assertEquals(130, cancelled.code(), cancelled::diagnostics);
-            assertThrows(SQLException.class, () -> statement.executeUpdate("UPDATE " + table + " SET t_type = 'specializedentry'"));
-
-            assertCliSuccess(db, "schemaimport", fixture.specialized, null, source,
+            var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
+            var rows = fixture.originalRows(db);
+            assertCliFailure(db, "schemaimport", fixture.specialized, null, source,
+                    "would change existing table entry for " + fixture.specialized + ".Data.SpecializedEntry"
+                            + " (requires a new T_Type check value)",
                     "--add-models", "--model-file", fixture.originalSource.toString());
-            assertCliSuccess(db, "import", fixture.specialized, "added", fixture.specializedInput("added"));
-            assertEquals("specializedentry", scalar(sql, "SELECT t_type FROM " + table + " WHERE t_ili_tid='added-specialized'"));
-            assertThrows(SQLException.class, () -> statement.executeUpdate("UPDATE " + table + " SET t_type = 'unmapped'"));
-            assertThrows(SQLException.class, () -> statement.executeUpdate("UPDATE " + table + " SET quantity = -1"));
-
-            if (!db.postgis()) {
-                statement.execute("ALTER TABLE " + table + " DROP CONSTRAINT entry_t_type_check");
-                statement.execute("ALTER TABLE " + table + " ADD CHECK (t_type IN ('alternate','entry','specializedentry'))");
-                var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
-                var further = fixture.subtypeSource("FurtherSmart" + version, "FurtherEntry", "Entry", "OtherExtra");
-                assertCliFailure(db, "schemaimport", "FurtherSmart" + version, null, further, "Expected one named T_Type check for entry",
-                        "--add-models", "--model-file", fixture.originalSource.toString());
-                before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
-            }
-        }
-    }
-
-    @ParameterizedTest(name = "{0}, XTF {1}")
-    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
-    void smart1ExtendsANamedTypeCheckWithOneInitialType(Backend backend, int version) throws Exception {
-        var fixture = new SmartModelExtensionFixtures(work, version, false, false);
-        fixture.leaveOnlyOriginalEntry();
-        var db = POSTGIS.target(work.resolve("checked-single-type.gpkg"), backend);
-        DbTestSupport.assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource,
-                "--inheritance", "smart1", "--create-type-discriminator", "--create-type-constraint");
-        assertCliSuccess(db, "import", fixture.original, "original", fixture.entryInput("original"));
-        assertCliSuccess(db, "schemaimport", fixture.specialized, null, fixture.specializedSource(),
-                "--add-models", "--model-file", fixture.originalSource.toString());
-        assertCliSuccess(db, "import", fixture.specialized, "added", fixture.specializedInput("added"));
-        try (var sql = db.connect(); var statement = sql.createStatement()) {
-            String table = db.table("entry");
-            assertEquals("entry", scalar(sql, "SELECT t_type FROM " + table + " WHERE t_ili_tid='original-entry'"));
-            assertEquals("specializedentry", scalar(sql, "SELECT t_type FROM " + table + " WHERE t_ili_tid='added-specialized'"));
-            assertThrows(SQLException.class, () -> statement.executeUpdate("UPDATE " + table + " SET t_type = 'unmapped'"));
+            before.assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()));
+            assertEquals(rows, fixture.originalRows(db));
+            assertThrows(SQLException.class, () -> statement.executeUpdate("UPDATE " + table + " SET t_type = 'specializedentry'"));
         }
     }
 

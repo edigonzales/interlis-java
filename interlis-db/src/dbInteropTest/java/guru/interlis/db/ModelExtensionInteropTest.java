@@ -6,6 +6,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.nio.file.Path;
+import java.sql.Connection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -13,15 +14,19 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
+import static guru.interlis.db.DbTestSupport.assertSchemaWithIdentityColumns;
 import static guru.interlis.db.DbTestSupport.catalogKeys;
 import static guru.interlis.db.DbTestSupport.foreignKeyColumns;
+import static guru.interlis.db.DbTestSupport.id;
 import static guru.interlis.db.DbTestSupport.scalar;
+import static guru.interlis.db.DbTestSupport.text;
 import static guru.interlis.db.InteropCommands.assertSharedIds;
 import static guru.interlis.db.InteropCommands.exportDataset;
 import static guru.interlis.db.InteropCommands.importDataset;
 import static guru.interlis.db.InteropCommands.schema;
 import static guru.interlis.db.ModelFixtures.tableFor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 final class ModelExtensionInteropTest {
     private static final PostgisTestServer POSTGIS = new PostgisTestServer();
@@ -33,14 +38,14 @@ final class ModelExtensionInteropTest {
         POSTGIS.close();
     }
 
-    @Test void geoPackage23() throws Exception { exchangeStructures(23, null, "newClass"); }
-    @Test void geoPackage24() throws Exception { exchangeStructures(24, null, "newClass"); }
-    @Test void postgis23() throws Exception { exchangeStructures(23, POSTGIS.container(), "newClass"); }
-    @Test void postgis24() throws Exception { exchangeStructures(24, POSTGIS.container(), "newClass"); }
-    @Test void strictGeoPackage23() throws Exception { exchangeStructures(23, null, "strict"); }
-    @Test void strictGeoPackage24() throws Exception { exchangeStructures(24, null, "strict"); }
-    @Test void strictPostgis23() throws Exception { exchangeStructures(23, POSTGIS.container(), "strict"); }
-    @Test void strictPostgis24() throws Exception { exchangeStructures(24, POSTGIS.container(), "strict"); }
+    @Test void sharedStructuresGeoPackage23() throws Exception { exchangeStructures(23, null, "newClass"); }
+    @Test void sharedStructuresGeoPackage24() throws Exception { exchangeStructures(24, null, "newClass"); }
+    @Test void sharedStructuresPostgis23() throws Exception { exchangeStructures(23, POSTGIS.container(), "newClass"); }
+    @Test void sharedStructuresPostgis24() throws Exception { exchangeStructures(24, POSTGIS.container(), "newClass"); }
+    @Test void strictStructuresGeoPackage23() throws Exception { exchangeStructures(23, null, "strict"); }
+    @Test void strictStructuresGeoPackage24() throws Exception { exchangeStructures(24, null, "strict"); }
+    @Test void strictStructuresPostgis23() throws Exception { exchangeStructures(23, POSTGIS.container(), "strict"); }
+    @Test void strictStructuresPostgis24() throws Exception { exchangeStructures(24, POSTGIS.container(), "strict"); }
     @Test void smart2StructuresGeoPackage23() throws Exception { exchangeStructures(23, null, "smart2"); }
     @Test void smart2StructuresGeoPackage24() throws Exception { exchangeStructures(24, null, "smart2"); }
     @Test void smart2StructuresPostgis23() throws Exception { exchangeStructures(23, POSTGIS.container(), "smart2"); }
@@ -65,18 +70,14 @@ final class ModelExtensionInteropTest {
     @Test void smart2RolesGeoPackage24() throws Exception { exchangeExternalRoles(24, null, "smart2"); }
     @Test void smart2RolesPostgis23() throws Exception { exchangeExternalRoles(23, POSTGIS.container(), "smart2"); }
     @Test void smart2RolesPostgis24() throws Exception { exchangeExternalRoles(24, POSTGIS.container(), "smart2"); }
-    @Test void smart1SharedSubtypeGeoPackage23() throws Exception { exchangeSmart1SharedSubtype(23, null, false); }
-    @Test void smart1SharedSubtypeGeoPackage24() throws Exception { exchangeSmart1SharedSubtype(24, null, false); }
-    @Test void smart1SharedSubtypePostgis23() throws Exception { exchangeSmart1SharedSubtype(23, POSTGIS.container(), false); }
-    @Test void smart1SharedSubtypePostgis24() throws Exception { exchangeSmart1SharedSubtype(24, POSTGIS.container(), false); }
-    @Test void smart1FirstSubtypeGeoPackage23() throws Exception { exchangeSmart1FirstSubtype(23, null); }
-    @Test void smart1FirstSubtypeGeoPackage24() throws Exception { exchangeSmart1FirstSubtype(24, null); }
-    @Test void smart1FirstSubtypePostgis23() throws Exception { exchangeSmart1FirstSubtype(23, POSTGIS.container()); }
-    @Test void smart1FirstSubtypePostgis24() throws Exception { exchangeSmart1FirstSubtype(24, POSTGIS.container()); }
-    @Test void smart1CheckedSubtypeGeoPackage23() throws Exception { exchangeSmart1SharedSubtype(23, null, true); }
-    @Test void smart1CheckedSubtypeGeoPackage24() throws Exception { exchangeSmart1SharedSubtype(24, null, true); }
-    @Test void smart1CheckedSubtypePostgis23() throws Exception { exchangeSmart1SharedSubtype(23, POSTGIS.container(), true); }
-    @Test void smart1CheckedSubtypePostgis24() throws Exception { exchangeSmart1SharedSubtype(24, POSTGIS.container(), true); }
+    @Test void smart1MetadataSubtypeGeoPackage23() throws Exception { exchangeSmart1MetadataSubtype(23, null); }
+    @Test void smart1MetadataSubtypeGeoPackage24() throws Exception { exchangeSmart1MetadataSubtype(24, null); }
+    @Test void smart1MetadataSubtypePostgis23() throws Exception { exchangeSmart1MetadataSubtype(23, POSTGIS.container()); }
+    @Test void smart1MetadataSubtypePostgis24() throws Exception { exchangeSmart1MetadataSubtype(24, POSTGIS.container()); }
+    @Test void smart1SharedSubtypeGeoPackage23() throws Exception { exchangeSmart1SharedSubtype(23, null); }
+    @Test void smart1SharedSubtypeGeoPackage24() throws Exception { exchangeSmart1SharedSubtype(24, null); }
+    @Test void smart1SharedSubtypePostgis23() throws Exception { exchangeSmart1SharedSubtype(23, POSTGIS.container()); }
+    @Test void smart1SharedSubtypePostgis24() throws Exception { exchangeSmart1SharedSubtype(24, POSTGIS.container()); }
     @Test void smart1FragmentGeoPackage23() throws Exception { exchangeSmart1Fragments(23, null); }
     @Test void smart1FragmentGeoPackage24() throws Exception { exchangeSmart1Fragments(24, null); }
     @Test void smart1FragmentPostgis23() throws Exception { exchangeSmart1Fragments(23, POSTGIS.container()); }
@@ -85,16 +86,20 @@ final class ModelExtensionInteropTest {
     @Test void smart1SubtypeStructuresGeoPackage24() throws Exception { exchangeSmart1SubtypeStructures(24, null); }
     @Test void smart1SubtypeStructuresPostgis23() throws Exception { exchangeSmart1SubtypeStructures(23, POSTGIS.container()); }
     @Test void smart1SubtypeStructuresPostgis24() throws Exception { exchangeSmart1SubtypeStructures(24, POSTGIS.container()); }
+    @Test void strictIndependentGeoPackage23() throws Exception { exchangeStrictIndependent(23, null); }
+    @Test void strictIndependentGeoPackage24() throws Exception { exchangeStrictIndependent(24, null); }
+    @Test void strictIndependentPostgis23() throws Exception { exchangeStrictIndependent(23, POSTGIS.container()); }
+    @Test void strictIndependentPostgis24() throws Exception { exchangeStrictIndependent(24, POSTGIS.container()); }
 
     private void exchangeSmart1SubtypeStructures(int version, PostgreSQLContainer postgres) throws Exception {
         var fixture = new Smart1StructureExtensionFixtures(work, version);
-        var db = new TestDatabase(work, postgres, "append_smart1_structure", "v" + version + "_");
+        var db = new TestDatabase(work, postgres, "smart1_structure", "v" + version + "_");
         var expected = db.peer("smart1_structure_reference");
         var reference = new ReferenceTool(work, db.postgis());
-        schema(reference, db, work, fixture.original, "smart1", "--createFk", "--createFkIdx");
+        assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource,
+                "--model", fixture.subtype, "--model-file", fixture.subtypeSource.toString(),
+                "--inheritance", "smart1", "--create-fk", "--create-fk-idx");
         importDataset(reference, db, "original", fixture.originalInput());
-        assertCliSuccess(db, "schemaimport", fixture.subtype, null, fixture.subtypeSource,
-                "--add-models", "--model-file", fixture.originalSource.toString());
         schema(reference, expected, work, fixture.original + ";" + fixture.subtype, "smart1", "--createFk", "--createFkIdx");
         assertSubtypeCatalog(db, expected, "memopart");
         try (var sql = db.connect(); var expectedSql = expected.connect()) {
@@ -121,30 +126,26 @@ final class ModelExtensionInteropTest {
         String nextType = "FurtherEntry";
         var firstSource = fixture.fragmentSource(fixture.specialized, firstType);
         var nextSource = fixture.fragmentSource(next, nextType);
-        var db = new TestDatabase(work, postgres, "append_smart1_fragments", "v" + version + "_");
+        var db = new TestDatabase(work, postgres, "smart1_fragments", "v" + version + "_");
         var expected = db.peer("smart1_fragments_reference");
         var reference = new ReferenceTool(work, db.postgis());
         String[] options = {"--createFk", "--createTypeConstraint"};
-        schema(reference, db, work, fixture.original, "smart1", options);
-        importDataset(reference, db, "original", fixture.entryInput("original"));
-        String entry = db.table("entry");
-        String idQuery = "SELECT t_id || ':' || t_basket FROM " + entry + " WHERE t_ili_tid='original-entry'";
+        assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource,
+                "--model", fixture.specialized, "--model-file", firstSource.toString(),
+                "--model", next, "--model-file", nextSource.toString(),
+                "--inheritance", "smart1", "--create-fk", "--create-type-constraint");
+        schema(reference, expected, work, fixture.original + ";" + fixture.specialized + ";" + next, "smart1", options);
+        // ili2gpkg 5.5.2 omits T_Type when importing only the base model into this joined schema.
+        assertCliSuccess(db, "import", fixture.original, "original", fixture.entryInput("original"));
+        importDataset(reference, db, "legacy", fixture.fragmentInput(fixture.specialized, firstType, "legacy"));
         var output = work.resolve("fragments.xtf");
         try (var sql = db.connect()) {
-            String originalId = scalar(sql, idQuery);
-            assertCliSuccess(db, "schemaimport", fixture.specialized, null, firstSource,
-                    "--add-models", "--model-file", fixture.originalSource.toString());
-            importDataset(reference, db, "legacy", fixture.fragmentInput(fixture.specialized, firstType, "legacy"));
-            assertCliSuccess(db, "schemaimport", next, null, nextSource,
-                    "--add-models", "--model-file", fixture.originalSource.toString());
-            schema(reference, expected, work, fixture.original + ";" + fixture.specialized + ";" + next, "smart1", options);
             String first = tableFor(db, fixture.specialized + ".Data." + firstType);
             String second = tableFor(db, next + ".Data." + nextType);
             assertSubtypeCatalog(db, expected, first, second);
             try (var expectedSql = expected.connect()) {
                 assertEquals(foreignKeyColumns(expected, expectedSql), foreignKeyColumns(db, sql));
             }
-            assertEquals(originalId, scalar(sql, idQuery));
             assertCliSuccess(db, "export", fixture.original, "original", output);
             fixture.assertEntryDelivery(output, "original");
             assertCliSuccess(db, "export", fixture.specialized, "legacy", output);
@@ -157,57 +158,119 @@ final class ModelExtensionInteropTest {
         }
     }
 
-    private static void assertFragmentIdentity(TestDatabase db, java.sql.Connection sql, String fragment, String prefix)
+    private static void assertFragmentIdentity(TestDatabase db, Connection sql, String fragment, String prefix)
             throws Exception {
         assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("entry") + " root JOIN "
                 + db.table(fragment) + " fragment ON root.t_id=fragment.t_id AND root.t_basket=fragment.t_basket"
                 + " WHERE root.t_type='" + fragment + "' AND root.t_ili_tid='" + prefix + "-fragment'"));
     }
 
-    private void exchangeSmart1FirstSubtype(int version, PostgreSQLContainer postgres) throws Exception {
-        var fixture = new SmartModelExtensionFixtures(work, version, false, false);
-        fixture.leaveOnlyOriginalEntry();
-        var source = fixture.specializedSource();
-        var db = new TestDatabase(work, postgres, "append_smart1_first_subtype", "v" + version + "_");
-        var expected = db.peer("append_first_subtype_reference");
+    private void exchangeSmart1MetadataSubtype(int version, PostgreSQLContainer postgres) throws Exception {
+        var fixture = new SmartModelExtensionFixtures(work, version, false, true);
+        var source = fixture.specializedSourceWithoutFields();
+        var db = new TestDatabase(work, postgres, "append_smart1_metadata", "v" + version + "_");
+        var expected = db.peer("append_smart1_metadata_reference");
         var reference = new ReferenceTool(work, db.postgis());
         schema(reference, db, work, fixture.original, "smart1");
-        importDataset(reference, db, "original", fixture.entryInput("original"));
-        assertCliSuccess(db, "schemaimport", fixture.specialized, null, source,
-                "--add-models", "--model-file", fixture.originalSource.toString());
-        schema(reference, expected, work, fixture.original + ";" + fixture.specialized, "smart1");
-        assertSubtypeCatalog(db, expected);
+        schema(reference, expected, work, fixture.original, "smart1");
+        importDataset(reference, db, "original", fixture.input(fixture.original, "original"));
+        var original = fixture.originalRows(db);
+        schema(reference, expected, work, fixture.specialized, "smart1");
+        try (var sql = db.connect(); var expectedSql = expected.connect()) {
+            var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema()).relations();
+            assertCliSuccess(db, "schemaimport", fixture.specialized, null, source,
+                    "--add-models", "--model-file", fixture.originalSource.toString());
+            var after = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
+            assertEquals(before.get("columns"), after.relations().get("columns"));
+            assertEquals(before.get("column_prop"), after.relations().get("column_prop"));
+            DbSchemaCatalog.read(expectedSql, expected.postgis(), expected.schema()).assertSameAs(after);
+        }
 
-        var output = work.resolve("first-subtype.xtf");
-        assertCliSuccess(db, "export", fixture.original, "original", output);
-        fixture.assertEntryDelivery(output, "original");
-        importDataset(reference, db, "legacy", fixture.specializedInput("legacy"));
+        var output = work.resolve("metadata-subtype.xtf");
+        importDataset(reference, db, "legacy", fixture.specializedInputWithoutFields("legacy"));
         assertCliSuccess(db, "export", fixture.specialized, "legacy", output);
-        fixture.assertSpecializedDelivery(output, "legacy");
-        assertCliSuccess(db, "import", fixture.specialized, "native", fixture.specializedInput("native"));
+        fixture.assertSpecializedDeliveryWithoutFields(output, "legacy");
+        assertCliSuccess(db, "import", fixture.specialized, "native", fixture.specializedInputWithoutFields("native"));
         exportDataset(reference, db, "native", output);
-        fixture.assertSpecializedDelivery(output, "native");
+        fixture.assertSpecializedDeliveryWithoutFields(output, "native");
+        importDataset(reference, db, "tail", fixture.specializedInputWithoutFields("tail"));
+        assertCliSuccess(db, "export", fixture.specialized, "tail", output);
+        fixture.assertSpecializedDeliveryWithoutFields(output, "tail");
+        assertEquals(original, fixture.originalRows(db));
+        assertSharedIds(db, 13, "entry");
+        try (var sql = db.connect()) {
+            assertEquals("3", scalar(sql, "SELECT COUNT(*) FROM " + db.table("entry")
+                    + " WHERE t_type='specializedentry' AND label='inherited' AND quantity=17"));
+        }
     }
 
-    private void exchangeSmart1SharedSubtype(int version, PostgreSQLContainer postgres, boolean checked) throws Exception {
+    private void exchangeStrictIndependent(int version, PostgreSQLContainer postgres) throws Exception {
+        var fixture = new ProfileFixtures(work, version);
+        String original = "StrictOriginal" + version;
+        String added = "StrictAdded" + version;
+        fixture.source(original, "CLASS Entry = Label : MANDATORY TEXT*20; END Entry;");
+        var source = fixture.source(added, "CLASS Checkpoint = RankNo : MANDATORY 0..100; Label : TEXT*20; END Checkpoint;");
+        var db = new TestDatabase(work, postgres, "append_strict", "v" + version + "_");
+        var expected = db.peer("append_strict_reference");
+        var reference = new ReferenceTool(work, db.postgis());
+        for (var target : List.of(db, expected)) {
+            reference.run(target, work.toString(), "--schemaimport", "--models", original, "--noSmartMapping",
+                    "--createBasketCol", "--createTidCol", "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056");
+        }
+        importDataset(reference, db, "original", fixture.data(original, "original",
+                fixture.object(original, "Entry", "original-entry", "<Label>retained</Label>")));
+        reference.run(expected, work.toString(), "--schemaimport", "--models", added);
+        String addedTable;
+        try (var sql = db.connect(); var expectedSql = expected.connect()) {
+            String row = "SELECT t_id || ':' || t_basket || ':' || label FROM " + db.table("entry")
+                    + " WHERE t_ili_tid='original-entry'";
+            String originalRow = scalar(sql, row);
+            assertCliSuccess(db, "schemaimport", added, null, source, "--add-models");
+            addedTable = tableFor(db, added + ".Data.Checkpoint");
+            var actual = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
+            DbSchemaCatalog.read(expectedSql, expected.postgis(), expected.schema()).assertSameAs(actual);
+            assertEquals(db.postgis() ? "NO" : "1", actual.relations().get("columns").stream()
+                    .filter(column -> column.getFirst().equals(addedTable) && column.get(2).equals("rankno"))
+                    .findFirst().orElseThrow().get(db.postgis() ? 5 : 4));
+            var output = work.resolve("checkpoint.xtf");
+            for (String prefix : List.of("legacy", "native", "tail")) {
+                Path input = fixture.data(added, prefix,
+                        fixture.object(added, "Checkpoint", prefix + "-checkpoint", "<RankNo>17</RankNo>"));
+                if (prefix.equals("native")) {
+                    assertCliSuccess(db, "import", added, prefix, input);
+                    exportDataset(reference, db, prefix, output);
+                } else {
+                    importDataset(reference, db, prefix, input);
+                    assertCliSuccess(db, "export", added, prefix, output);
+                }
+                var checkpoint = fixture.rows(output, prefix, 1).getFirst();
+                ModelFixtures.assertName(checkpoint, version, added + ".Data.Checkpoint");
+                assertEquals(prefix + "-checkpoint", id(checkpoint, version, "tid"));
+                assertEquals("17", text(checkpoint, "RankNo"));
+                assertNull(text(checkpoint, "Label"));
+            }
+            assertEquals(originalRow, scalar(sql, row));
+        }
+        assertSharedIds(db, 12, "entry", addedTable);
+    }
+
+    private void exchangeSmart1SharedSubtype(int version, PostgreSQLContainer postgres) throws Exception {
         var fixture = new SmartModelExtensionFixtures(work, version, false, true);
         var source = fixture.specializedSource();
         String further = "FurtherSmart" + version;
         var furtherSource = fixture.subtypeSource(further, "FurtherEntry", "Entry", "OtherExtra");
-        String name = checked ? "append_smart1_checked" : "append_smart1_subtype";
-        var db = new TestDatabase(work, postgres, name, "v" + version + "_");
-        var expected = db.peer(name + "_reference");
+        var db = new TestDatabase(work, postgres, "smart1_shared_subtypes", "v" + version + "_");
+        var expected = db.peer("smart1_shared_subtypes_reference");
         var reference = new ReferenceTool(work, db.postgis());
-        String[] options = checked ? new String[]{"--createTypeConstraint"} : new String[0];
-        schema(reference, db, work, fixture.original, "smart1", options);
+        assertSchemaWithIdentityColumns(db, fixture.original, fixture.originalSource,
+                "--model", fixture.specialized, "--model-file", source.toString(),
+                "--model", further, "--model-file", furtherSource.toString(),
+                "--inheritance", "smart1", "--create-type-constraint");
+        schema(reference, expected, work, fixture.original + ";" + fixture.specialized + ";" + further, "smart1",
+                "--createTypeConstraint");
         importDataset(reference, db, "original", fixture.input(fixture.original, "original"));
         var original = fixture.originalRows(db);
-        assertCliSuccess(db, "schemaimport", fixture.specialized, null, source,
-                "--add-models", "--model-file", fixture.originalSource.toString());
         importDataset(reference, db, "legacy", fixture.specializedInput("legacy"));
-        assertCliSuccess(db, "schemaimport", further, null, furtherSource,
-                "--add-models", "--model-file", fixture.originalSource.toString());
-        schema(reference, expected, work, fixture.original + ";" + fixture.specialized + ";" + further, "smart1", options);
         assertSubtypeCatalog(db, expected);
         try (var sql = db.connect()) {
             assertEquals("2", scalar(sql, "SELECT COUNT(*) FROM " + db.table("entry")
@@ -356,29 +419,25 @@ final class ModelExtensionInteropTest {
     private void exchangeStructures(int version, PostgreSQLContainer postgres, String profile) throws Exception {
         boolean strict = profile.equals("strict");
         var fixture = new ModelExtensionFixtures(work, version, profile);
-        var db = new TestDatabase(work, postgres, "append_" + profile.toLowerCase(Locale.ROOT) + "_models", "v" + version + "_");
+        String name = profile.toLowerCase(Locale.ROOT) + "_structure_models";
+        var db = new TestDatabase(work, postgres, name, "v" + version + "_");
+        var expected = db.peer(name + "_reference");
         var reference = new ReferenceTool(work, db.postgis());
+        fixture.combinedSchema(db);
+        String models = fixture.original + ";" + fixture.added;
         if (strict) {
-            reference.run(db, work.toString(), "--schemaimport", "--noSmartMapping", "--createBasketCol", "--createTidCol",
-                    "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056", "--models", fixture.original);
+            reference.run(expected, work.toString(), "--schemaimport", "--noSmartMapping", "--createBasketCol", "--createTidCol",
+                    "--defaultSrsAuth", "EPSG", "--defaultSrsCode", "2056", "--models", models);
         } else {
-            schema(reference, db, work, fixture.original, profile);
+            schema(reference, expected, work, models, profile);
         }
         importDataset(reference, db, "original", fixture.originalInput);
 
-        try (var sql = db.connect()) {
-            var before = DbSchemaCatalog.read(sql, db.postgis(), db.schema());
+        try (var sql = db.connect(); var expectedSql = expected.connect()) {
             var ids = fixture.originalIds(db, sql);
-            fixture.extend(db);
-            String newTable = fixture.assertExtension(db, sql, before, ids);
-            if (profile.equals("smart2")) {
-                var expected = db.peer("append_shared_structures_reference");
-                schema(reference, expected, work, fixture.original + ";" + fixture.added, profile);
-                try (var expectedSql = expected.connect()) {
-                    DbSchemaCatalog.read(expectedSql, db.postgis(), expected.schema()).canonicalStructureOwners("detail")
-                            .assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()).canonicalStructureOwners("detail"));
-                }
-            }
+            String newTable = fixture.assertCombinedSchema(db, sql);
+            DbSchemaCatalog.read(expectedSql, db.postgis(), expected.schema()).canonicalStructureOwners("detail")
+                    .assertSameAs(DbSchemaCatalog.read(sql, db.postgis(), db.schema()).canonicalStructureOwners("detail"));
             fixture.removeSources();
 
             Path output = work.resolve("original-native.xtf");

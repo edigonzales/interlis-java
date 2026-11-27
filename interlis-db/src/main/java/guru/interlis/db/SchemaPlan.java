@@ -65,9 +65,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                   boolean splitGeometries, int defaultEpsg, boolean multiSrs, boolean strokeArcs, DbEnumOptions enumOptions,
                   Set<AttributeTransformation> transformations, List<DbEnumLookup> enumLookups,
                   Map<String, List<List<String>>> uniqueKeys, Map<String, ColumnChecks> columnChecks,
-                  List<DbMetaInfo.Row> metaInformation, boolean sqlNotNull, Map<String, Set<String>> requiredColumns,
-                  List<AddedColumn> addedColumns, List<DiscriminatorChange> discriminatorChanges,
-                  List<AddedReference> addedReferences) {
+                  List<DbMetaInfo.Row> metaInformation, boolean sqlNotNull, Map<String, Set<String>> requiredColumns) {
     record ModelFile(String filename, LanguageVersion version, String modelNames, String content) { }
 
     record ColumnProperty(String table, String subtype, String column, String key, String value) { }
@@ -79,15 +77,6 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
     record TemporalCheck(String column, String sqlType, String minimum, String maximum) { }
 
     record ColumnChecks(List<NumericCheck> numbers, List<TextCheck> texts, List<TemporalCheck> times) { }
-
-    record AddedColumn(String table, DbMapping.Column field, ColumnChecks checks) { }
-
-    record AddedReference(String ownerModel, String path, String table, String column, String target) { }
-
-    record DiscriminatorChange(String table, List<String> types, Optional<String> initialType,
-                               Optional<String> existingCheck) {
-        DiscriminatorChange { types = List.copyOf(types); }
-    }
 
     record ForeignKey(String table, String column, String target, boolean index) {
         ForeignKey(String table, String column, String target) { this(table, column, target, true); }
@@ -102,9 +91,6 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         addedVirtualClasses = List.copyOf(addedVirtualClasses);
         addedAssociations = List.copyOf(addedAssociations);
         addedCompositions = List.copyOf(addedCompositions);
-        addedColumns = List.copyOf(addedColumns);
-        discriminatorChanges = List.copyOf(discriminatorChanges);
-        addedReferences = List.copyOf(addedReferences);
         columnProperties = List.copyOf(columnProperties);
         transformations = Set.copyOf(transformations);
         enumLookups = List.copyOf(enumLookups);
@@ -161,7 +147,9 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         var addedAssociations = mapping.associations().stream().filter(association -> !association.linkTable()
                 && !names.hasClass(association.object().name().declared().toString())).toList();
         var addedCompositions = mapping.compositions().stream()
-                .filter(composition -> !names.hasAttribute(composition.slot().name().declared().toString())).toList();
+                .filter(composition -> names.storedReference(composition.slot().name().declared().toString(),
+                        mapping.table(composition.childRoot()).name(), mapping.table(composition.parent()).name(), gpkg) == null)
+                .toList();
         var enumLookups = DbEnumLookup.plan(mapping, names, enumOptions, compiled.syntax(), token);
         var enumTables = enumOptions.lookup() == DbEnumOptions.Lookup.WITH_ID && !enumOptions.itfCodes()
                 && schemaOptions.contains(SchemaOption.FOREIGN_KEY)
@@ -210,7 +198,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                 splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations,
                 enumLookups, Map.copyOf(uniqueKeys), Map.copyOf(columnChecks),
                 schemaOptions.contains(SchemaOption.META_INFO) ? DbMetaInfo.plan(mapping, token) : List.of(),
-                sqlNotNull, sqlNotNull ? requiredColumns(mapping, addedTables, multiSrs) : Map.of(), List.of(), List.of(), List.of());
+                sqlNotNull, sqlNotNull ? requiredColumns(mapping, addedTables, multiSrs) : Map.of());
     }
 
     private static Map<String, Set<String>> requiredColumns(DbMapping mapping, List<DbMapping.Table> addedTables,
@@ -265,7 +253,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
 
     Set<SchemaOption> schemaOptions() { return mapping.schemaOptions(); }
 
-    static ColumnChecks columnChecks(List<DbMapping.Column> columns, boolean gpkg, Set<SchemaOption> options) {
+    private static ColumnChecks columnChecks(List<DbMapping.Column> columns, boolean gpkg, Set<SchemaOption> options) {
         return new ColumnChecks(
                 options.contains(SchemaOption.NUMERIC_CHECKS) && !options.contains(SchemaOption.SCALAR_TEXT)
                         ? columns.stream().flatMap(SchemaPlan::numericChecks).toList() : List.of(),
@@ -413,9 +401,6 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             keys.add(new ForeignKey(mapping.table(composition.childRoot()).name(), composition.ownerColumn(),
                     mapping.table(composition.parent()).name()));
         }
-        for (var reference : addedReferences) {
-            keys.add(new ForeignKey(reference.table(), reference.column(), reference.target()));
-        }
         if (enumOptions.lookup() == DbEnumOptions.Lookup.WITH_ID) {
             var enumTables = enumLookups.stream().map(DbEnumLookup::table).collect(Collectors.toSet());
             for (var property : columnProperties) {
@@ -437,17 +422,10 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                 ? "CATALOGUE" : table.object().kind().name();
     }
 
-    SchemaPlan withExtension(List<ModelFile> files, List<AddedColumn> columns, List<DiscriminatorChange> discriminators,
-                             List<AddedReference> references) {
-        var properties = new ArrayList<>(columnProperties);
-        for (var column : columns) {
-            var owner = mapping.tables().stream().filter(table -> table.name().equals(column.table())).findFirst().orElseThrow();
-            addProperties(properties, new HashMap<>(), mapping, owner, column.table(), column.field());
-        }
-        return new SchemaPlan(mapping, files, addedTables, addedVirtualClasses, addedAssociations, addedCompositions, properties,
+    SchemaPlan withModelFiles(List<ModelFile> files) {
+        return new SchemaPlan(mapping, files, addedTables, addedVirtualClasses, addedAssociations, addedCompositions, columnProperties,
                 geometryColumns, splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations, enumLookups,
-                uniqueKeys, columnChecks, metaInformation, sqlNotNull, requiredColumns,
-                columns, discriminators, references);
+                uniqueKeys, columnChecks, metaInformation, sqlNotNull, requiredColumns);
     }
 
     private static Origin.DeclaredOrigin origin(ModelSymbol model) {

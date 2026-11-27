@@ -1,7 +1,5 @@
 package guru.interlis.db;
 
-import com.google.gson.Gson;
-
 import guru.interlis.compiler.AnalysisBudget;
 import guru.interlis.db.DbMapping.AssociationRole;
 import guru.interlis.db.DbMapping.Column;
@@ -12,7 +10,6 @@ import guru.interlis.db.DbMapping.Kind;
 import guru.interlis.db.DbMapping.SecondaryGeometry;
 import guru.interlis.db.DbMapping.Table;
 import guru.interlis.execution.CancellationToken;
-import guru.interlis.model.CollectionKind;
 import guru.interlis.model.EnumerationType;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.Modifier;
@@ -742,16 +739,22 @@ final class DbSchemaReader {
                 }
             }
         }
-        var attributes = new HashSet<String>();
+        var references = new HashMap<SqlNames.ReferenceMapping, String>();
         var columns = new HashMap<String, Set<String>>();
         String attributeTable = foldedName(ATTRNAME);
-        requireMetadataColumns(db, attributeTable, "iliname", "colowner", "sqlname");
+        requireMetadataColumns(db, attributeTable, "iliname", "colowner", "sqlname", "target");
         try (var stmt = db.connection().createStatement();
-             var rows = stmt.executeQuery("SELECT iliname, colowner, sqlname FROM " + db.table(attributeTable))) {
+             var rows = stmt.executeQuery("SELECT iliname, colowner, sqlname, target FROM " + db.table(attributeTable))) {
             while (rows.next()) {
-                attributes.add(required(rows, 1, "ATTRNAME.iliname"));
+                String path = required(rows, 1, "ATTRNAME.iliname");
                 String owner = required(rows, 2, "ATTRNAME.colowner");
-                columns.computeIfAbsent(owner, unused -> new HashSet<>()).add(foldedName(required(rows, 3, "ATTRNAME.sqlname")));
+                String column = required(rows, 3, "ATTRNAME.sqlname");
+                String target = rows.getString(4);
+                columns.computeIfAbsent(owner, unused -> new HashSet<>()).add(foldedName(column));
+                if (target != null && references.putIfAbsent(
+                        new SqlNames.ReferenceMapping(path, key(db, owner), key(db, target)), column) != null) {
+                    throw new DbException("Ambiguous ATTRNAME mapping for " + path);
+                }
             }
         }
         var strategies = new HashMap<String, String>();
@@ -770,13 +773,69 @@ final class DbSchemaReader {
                 }
             }
         }
-        return new SqlNames(classes, relations, columns, attributes, strategies);
+        return new SqlNames(classes, relations, columns, references, strategies);
     }
 
-    static SchemaPlan planSmartExtension(Database db, SchemaPlan extension, List<SchemaPlan.ModelFile> newFiles,
-                                          SqlNames names, CancellationToken token) throws SQLException {
+    static void checkAdditiveExtension(Database db, SchemaPlan extension, SqlNames names, CancellationToken token)
+            throws SQLException {
         var mapping = extension.mapping();
-        var newModels = newFiles.stream().flatMap(file -> storedDeclarations(file.modelNames()).keySet().stream())
+        if (mapping.profile() != DbInheritance.Profile.NEW_CLASS) {
+            checkStoredClassTargets(db, extension, names, token);
+        }
+
+        var newTables = extension.addedTables().stream().map(table -> table.object().symbol())
+                .collect(Collectors.toSet());
+        var existingColumns = new HashMap<String, PhysicalColumns>();
+        for (var composition : mapping.compositions()) {
+            token.throwIfCancellationRequested();
+            if (newTables.contains(composition.childRoot())) continue;
+            String path = composition.slot().name().declared().toString();
+            String child = mapping.table(composition.childRoot()).name();
+            String parent = mapping.table(composition.parent()).name();
+            String column = names.storedReference(path, child, parent, db.gpkg());
+            if (column == null) {
+                throw extensionChange(child, path, "a structure owner column for " + parent);
+            }
+            var physical = extensionColumns(db, existingColumns, child).types();
+            if (!physical.containsKey(key(db, column))) {
+                throw extensionChange(child, path, "the stored structure owner column " + column + " for " + parent);
+            }
+            requireColumns(db, child, physical, Map.of(column, Kind.REFERENCE));
+        }
+
+        checkExistingFields(extension, names, newTables, token);
+        for (var type : mapping.objectStorage()) {
+            token.throwIfCancellationRequested();
+            var root = type.root();
+            String path = type.object().name().declared().toString();
+            if (newTables.contains(root.object().symbol()) || names.hasClass(path) || !root.hasDiscriminator()) continue;
+            var physical = extensionColumns(db, existingColumns, root.name());
+            if (!physical.types().containsKey(T_TYPE) || !physical.notNull().contains(T_TYPE)) {
+                throw extensionChange(root.name(), path, Ili2dbLayout.TYPE_COLUMN + " as a non-null discriminator");
+            }
+            requireColumns(db, root.name(), physical.types(), Map.of(T_TYPE, Kind.TEXT));
+            if (extension.schemaOptions().contains(Ili2dbLayout.SchemaOption.TYPE_CONSTRAINT)
+                    && !type.object().modifiers().contains(Modifier.ABSTRACT)) {
+                throw extensionChange(root.name(), path, "a new " + Ili2dbLayout.TYPE_COLUMN + " check value");
+            }
+        }
+        checkStoredReferenceTargets(db, extension, names, token);
+    }
+
+    private static PhysicalColumns extensionColumns(Database db, Map<String, PhysicalColumns> columns, String table)
+            throws SQLException {
+        var physical = columns.get(table);
+        if (physical == null) {
+            physical = readPhysicalColumns(db, table);
+            columns.put(table, physical);
+        }
+        return physical;
+    }
+
+    private static void checkStoredClassTargets(Database db, SchemaPlan extension, SqlNames names,
+                                                CancellationToken token) throws SQLException {
+        var mapping = extension.mapping();
+        var newModels = extension.modelFiles().stream().flatMap(file -> storedDeclarations(file.modelNames()).keySet().stream())
                 .collect(Collectors.toSet());
         for (var declaration : mapping.inheritance().declarations()) {
             token.throwIfCancellationRequested();
@@ -798,164 +857,41 @@ final class DbSchemaReader {
                 }
             }
         }
-        var references = planStoredReferenceExpansion(db, extension, names, token);
-        var columns = new ArrayList<SchemaPlan.AddedColumn>();
-        var aliases = mapping.inheritance().aliases().stream()
-                .filter(alias -> !names.hasClass(alias.object().name().declared().toString())
-                        && names.hasClass(mapping.table(alias.owner()).object().name().declared().toString()))
-                .collect(Collectors.groupingBy(DbMapping.StorageAlias::owner, LinkedHashMap::new, Collectors.toList()));
-        for (var entry : aliases.entrySet()) {
+    }
+
+    private static void checkExistingFields(SchemaPlan extension, SqlNames names, Set<SymbolRef> newTables,
+                                            CancellationToken token) {
+        var mapping = extension.mapping();
+        var newSlots = new HashSet<SymbolRef>();
+        for (var alias : mapping.inheritance().aliases()) {
+            if (!names.hasClass(alias.object().name().declared().toString())) {
+                for (var attribute : DbMapping.attributes(alias.object())) newSlots.add(attribute.symbol());
+            }
+        }
+        for (var association : extension.addedAssociations()) newSlots.add(association.role().symbol());
+        for (var table : mapping.tables()) {
             token.throwIfCancellationRequested();
-            var owner = mapping.table(entry.getKey());
-            if (owner.subtype() || !owner.hasDiscriminator()) {
-                throw unsupported("Smart1 --add-models requires a shared root table in " + owner.name());
-            }
-            var physical = readPhysicalColumns(db, owner.name()).types();
-            for (var alias : entry.getValue()) {
-                var object = alias.object();
-                if (mapping.associations().stream().anyMatch(association -> association.owner().equals(object.symbol()))) {
-                    throw unsupported("new Smart1 roles in shared table " + owner.name());
-                }
-                for (var attribute : DbMapping.attributes(object)) {
-                    if (extension.addedCompositions().stream().anyMatch(composition -> composition.slot().symbol().equals(attribute.symbol())
-                            && composition.parent().equals(owner.object().symbol()) && sharedSmart1Composition(mapping, composition))) {
-                        continue;
-                    }
-                    var fields = owner.columns().stream().filter(column -> column.slot().symbol().equals(attribute.symbol())).toList();
-                    if (fields.size() != 1 || fields.getFirst().kind().geometry() || fields.getFirst().target().isPresent()
-                            || fields.getFirst().transformation() != null || fields.getFirst().enumText().isPresent()
-                            || fields.getFirst().kind() == Kind.ENUMERATION && extension.enumOptions().lookup() == DbEnumOptions.Lookup.WITH_ID) {
-                        throw unsupported("Smart1 attribute in shared table at " + attribute.name().declared());
-                    }
-                    var field = fields.getFirst();
-                    if (physical.containsKey(key(db, field.name()))) {
-                        throw new DbException("Existing column conflicts with " + owner.name() + "." + field.name());
-                    }
-                    columns.add(new SchemaPlan.AddedColumn(owner.name(), field,
-                            SchemaPlan.columnChecks(List.of(field), db.gpkg(), extension.schemaOptions())));
-                }
-            }
-        }
-        var discriminators = mapping.profile() == DbInheritance.Profile.SMART1
-                ? planSmart1Discriminators(db, extension, names, token) : List.<SchemaPlan.DiscriminatorChange>of();
-        return extension.withExtension(newFiles, columns, discriminators, references);
-    }
-
-    private static boolean sharedSmart1Composition(DbMapping mapping, Composition composition) {
-        var plan = mapping.plan();
-        var child = plan.object(composition.child()).orElseThrow();
-        boolean supportedCardinality = composition.collectionKind().map(kind -> kind == CollectionKind.LIST)
-                .orElseGet(() -> !composition.slot().attribute().mandatory());
-        return supportedCardinality && composition.child().equals(composition.childRoot())
-                && !child.modifiers().contains(Modifier.ABSTRACT)
-                && plan.objects().stream().noneMatch(object -> object.baseType().filter(child.symbol()::equals).isPresent())
-                && DbMapping.attributes(child).stream().allMatch(field -> DbMapping.scalarKind(DbStructureShape.type(plan, field)) != null);
-    }
-
-    private static List<SchemaPlan.DiscriminatorChange> planSmart1Discriminators(Database db, SchemaPlan extension,
-                                                                                SqlNames names, CancellationToken token)
-            throws SQLException {
-        var newTypes = extension.mapping().objectStorage().stream()
-                .filter(type -> type.object().kind() == SymbolKind.CLASS && !type.object().modifiers().contains(Modifier.ABSTRACT)
-                        && !names.hasClass(type.object().name().declared().toString())
-                        && names.hasClass(type.root().object().name().declared().toString()))
-                .collect(Collectors.groupingBy(DbMapping.ObjectStorage::root, LinkedHashMap::new, Collectors.toList()));
-        var changes = new ArrayList<SchemaPlan.DiscriminatorChange>();
-        for (var entry : newTypes.entrySet()) {
-            token.throwIfCancellationRequested();
-            var root = entry.getKey();
-            String path = root.object().name().declared().toString();
-            var stored = read(db, List.of(MetadataScope.modelName(path)), token);
-            var oldRoot = stored.tables().stream().filter(table -> table.object().name().declared().toString().equals(path))
-                    .findFirst().orElseThrow(() -> new DbException("Missing stored Smart1 table for " + path));
-            if (oldRoot.subtype() || !root.hasDiscriminator()) {
-                throw unsupported("Smart1 --add-models requires a shared root table in " + root.name());
-            }
-            var oldTypes = stored.objectStorage().stream().filter(type -> type.root().equals(oldRoot)
-                    && !type.object().modifiers().contains(Modifier.ABSTRACT)).map(DbMapping.ObjectStorage::discriminator).sorted().toList();
-            Optional<String> initialType = Optional.empty();
-            Optional<String> existingCheck = Optional.empty();
-            if (oldRoot.hasDiscriminator()) {
-                requireStoredDiscriminatorTypes(db, root.name(), oldTypes);
-                if (extension.schemaOptions().contains(Ili2dbLayout.SchemaOption.TYPE_CONSTRAINT)) {
-                    existingCheck = Optional.of(storedDiscriminatorCheck(db, root.name(), oldTypes));
-                }
-            } else {
-                if (oldTypes.size() != 1) throw new DbException("Cannot determine initial T_Type for " + root.name());
-                requireStoredDiscriminatorTypes(db, root.name(), List.of());
-                initialType = Optional.of(oldTypes.getFirst());
-            }
-            var types = new java.util.TreeSet<>(oldTypes);
-            entry.getValue().stream().map(DbMapping.ObjectStorage::discriminator).forEach(types::add);
-            changes.add(new SchemaPlan.DiscriminatorChange(root.name(), List.copyOf(types), initialType, existingCheck));
-        }
-        return changes;
-    }
-
-    private static String storedDiscriminatorCheck(Database db, String table, List<String> types) throws SQLException {
-        var names = new ArrayList<String>();
-        if (db.gpkg()) {
-            String values = types.stream().map(SchemaSql::literal).map(Pattern::quote).collect(Collectors.joining("\\s*,\\s*"));
-            var namedCheck = Pattern.compile("(?i:CONSTRAINT\\s+)(?:\"([^\"]+)\"|([a-zA-Z0-9_]+))"
-                    + "(?i:\\s+CHECK\\s*\\(\\s*\"?t_type\"?\\s+IN\\s*\\(\\s*)" + values + "\\s*\\)\\s*\\)");
-            try (var stmt = db.connection().prepareStatement("SELECT sql FROM sqlite_schema WHERE type = 'table' AND name = ?")) {
-                stmt.setString(1, table);
-                try (var rows = stmt.executeQuery()) {
-                    if (rows.next()) {
-                        var matches = namedCheck.matcher(rows.getString(1));
-                        while (matches.find()) names.add(matches.group(1) == null ? matches.group(2) : matches.group(1));
-                    }
-                }
-            }
-        } else {
-            String sql = """
-                    SELECT c.conname, pg_get_expr(c.conbin, c.conrelid)
-                    FROM pg_constraint c JOIN pg_class t ON t.oid = c.conrelid
-                    JOIN pg_namespace n ON n.oid = t.relnamespace
-                    WHERE n.nspname = ? AND t.relname = ? AND c.contype = 'c'
-                    """;
-            String values = types.stream().map(SchemaSql::literal).collect(Collectors.joining(","));
-            try (var stmt = db.connection().prepareStatement(sql)) {
-                stmt.setString(1, db.schema());
-                stmt.setString(2, table);
-                try (var rows = stmt.executeQuery()) {
-                    while (rows.next()) {
-                        String expression = rows.getString(2).replaceAll("::character varying(?:\\[\\])?|::text(?:\\[\\])?|[()\\s]", "");
-                        if (expression.equals("t_type=ANYARRAY[" + values + "]")
-                                || types.size() == 1 && expression.equals("t_type=" + values)) {
-                            names.add(rows.getString(1));
-                        }
-                    }
-                }
-            }
-        }
-        if (names.size() != 1) throw new DbException("Expected one named T_Type check for " + table);
-        return names.getFirst();
-    }
-
-    private static void requireStoredDiscriminatorTypes(Database db, String table, List<String> types) throws SQLException {
-        String sql = "SELECT setting FROM " + db.technicalTable(Ili2dbLayout.COLUMN_PROP)
-                + " WHERE tablename = ? AND lower(columnname) = ? AND tag = ? AND subtype IS NULL";
-        try (var statement = db.connection().prepareStatement(sql)) {
-            statement.setString(1, table);
-            statement.setString(2, T_TYPE);
-            statement.setString(3, PREFIX + "types");
-            try (var rows = statement.executeQuery()) {
-                boolean found = rows.next();
-                if (types.isEmpty() ? found : !found || !new Gson().toJson(types).equals(rows.getString(1)) || rows.next()) {
-                    throw new DbException("Inconsistent COLUMN_PROP.types for " + table + "." + T_TYPE);
-                }
+            if (newTables.contains(table.object().symbol())) continue;
+            for (var column : table.columns()) checkExistingField(table.name(), column, newSlots);
+            for (var geometry : table.secondaryGeometries()) {
+                checkExistingField(table.name(), geometry.column(), newSlots);
             }
         }
     }
 
-    private static List<SchemaPlan.AddedReference> planStoredReferenceExpansion(Database db, SchemaPlan extension,
-                                                                                SqlNames names, CancellationToken token)
-            throws SQLException {
+    private static void checkExistingField(String table, Column column, Set<SymbolRef> newSlots) {
+        if (newSlots.contains(column.slot().symbol())) {
+            throw extensionChange(table, column.slot().name().declared().toString(), "a new field or role column " + column.name());
+        }
+    }
+
+    private static void checkStoredReferenceTargets(Database db, SchemaPlan extension, SqlNames names,
+                                                    CancellationToken token) throws SQLException {
         var mapping = extension.mapping();
         var plan = mapping.plan();
         var affectedTargets = new LinkedHashMap<String, Set<String>>();
         for (var table : extension.addedTables()) {
+            token.throwIfCancellationRequested();
             if (table.object().kind() != SymbolKind.CLASS) continue;
             for (var base = table.object().baseType().flatMap(plan::object); base.isPresent();
                  base = base.orElseThrow().baseType().flatMap(plan::object)) {
@@ -966,15 +902,12 @@ final class DbSchemaReader {
                 }
             }
         }
-        if (affectedTargets.isEmpty()) return List.of();
+        if (affectedTargets.isEmpty()) return;
 
-        // A previously mapped reference can be declared in a model outside the new source closure.
+        // A stored reference may be declared in a model outside the new source closure.
         var storedNames = readReferenceNames(db, token);
         var slotsByModel = storedNames.keySet().stream().collect(Collectors.groupingBy(MetadataScope::modelName,
                 LinkedHashMap::new, Collectors.toSet()));
-        var storedClasses = DbStoredClasses.read(db, token);
-        var additions = new ArrayList<SchemaPlan.AddedReference>();
-        var processed = new HashSet<String>();
         var compiledModels = plan.models().stream().map(model -> model.name().declared().last()).collect(Collectors.toSet());
         for (var entry : slotsByModel.entrySet()) {
             token.throwIfCancellationRequested();
@@ -982,62 +915,20 @@ final class DbSchemaReader {
             for (var object : source.objects()) {
                 for (var slot : object.slots()) {
                     String path = slot.name().declared().toString();
-                    if (!entry.getValue().contains(path) || processed.contains(path)) continue;
-                    var roots = qualifiedReferenceRoots(source, slot);
-                    var targets = roots.stream().filter(affectedTargets::containsKey).flatMap(root -> affectedTargets.get(root).stream())
-                            .collect(Collectors.toCollection(java.util.TreeSet::new));
-                    if (targets.isEmpty()) continue;
-                    var bindings = storedNames.get(path);
-                    if (mapping.profile() != DbInheritance.Profile.SMART2 || !expandableReference(source, object, slot, bindings)) {
-                        throw new DbException("--add-models would change stored reference " + path);
-                    }
-                    processed.add(path);
-                    var byOwner = bindings.stream().collect(Collectors.groupingBy(AttributeName::owner,
-                            LinkedHashMap::new, Collectors.toList()));
-                    for (var owner : byOwner.entrySet()) {
-                        String table = owner.getKey();
-                        var ownerType = storedClasses.physicalType(table, db.gpkg());
-                        if (ownerType == null) throw new DbException("Missing stored reference owner for " + path + " in " + table);
-                        var columns = readPhysicalColumns(db, table).types();
-                        for (var binding : owner.getValue()) {
-                            requireColumns(db, table, columns, Map.of(binding.name(), Kind.REFERENCE));
-                            requireForeignKey(db, table, binding.name(), binding.target(), path);
-                        }
-                        for (String target : targets) {
-                            String column = names.polymorphicColumn(table, slot.name().declared().last(), target);
-                            if (columns.containsKey(key(db, column))) {
-                                throw new DbException("Existing column conflicts with " + table + "." + column);
-                            }
-                            additions.add(new SchemaPlan.AddedReference(MetadataScope.modelName(ownerType.path()), path, table, column, target));
-                        }
+                    if (!entry.getValue().contains(path)) continue;
+                    var target = qualifiedReferenceRoots(source, slot).stream().filter(affectedTargets::containsKey)
+                            .flatMap(root -> affectedTargets.get(root).stream()).sorted().findFirst();
+                    if (target.isPresent()) {
+                        String owner = storedNames.get(path).stream().map(AttributeName::owner).sorted().findFirst().orElseThrow();
+                        throw extensionChange(owner, path, "a reference column for " + target.orElseThrow());
                     }
                 }
             }
         }
-        return additions;
     }
 
-    private static boolean expandableReference(TransferPlan plan, ObjectDescriptor object, TransferSlot slot,
-                                               List<AttributeName> bindings) {
-        return switch (slot) {
-            case RoleSlot role -> expandableRole(plan, object, role, bindings.size());
-            case AttributeSlot attribute -> (object.kind() == SymbolKind.CLASS || object.kind() == SymbolKind.STRUCTURE)
-                    && DbStructureShape.type(plan, attribute) instanceof ReferenceType reference && reference.restrictions().isEmpty();
-        };
-    }
-
-    private static boolean expandableRole(TransferPlan plan, ObjectDescriptor object, RoleSlot role, int storedTargets) {
-        if (object.kind() != SymbolKind.ASSOCIATION) return false;
-        var roles = DbMapping.describeRoles(plan, object);
-        var embedded = DbMapping.embeddedAssociation(plan, object, "", roles);
-        if (embedded.isPresent()) {
-            var association = embedded.orElseThrow();
-            return association.role().symbol().equals(role.symbol()) && !association.linkTable() && !association.ordered();
-        }
-        // describeRoles already requires a transferable binary association with unordered -- roles for an external end.
-        return role.role().external() && storedTargets >= 2 && roles.stream().noneMatch(AssociationRole::single)
-                && object.slots().stream().noneMatch(AttributeSlot.class::isInstance)
-                && role.role().targets().getFirst().restrictions().isEmpty();
+    private static DbException extensionChange(String table, String path, String reason) {
+        return new DbException("--add-models would change existing table " + table + " for " + path + " (requires " + reason + ")");
     }
 
     private static Map<String, List<AttributeName>> readReferenceNames(Database db, CancellationToken token) throws SQLException {

@@ -44,21 +44,34 @@ final class SmartModelExtensionFixtures {
         return subtypeSource(specialized, "SpecializedEntry", base, "Extra");
     }
 
+    Path specializedSourceWithoutFields() throws Exception {
+        return subtypeSource(specialized, "SpecializedEntry", "Entry", null);
+    }
+
     Path subtypeSource(String model, String type, String base, String field) throws Exception {
+        String declaration = field == null ? "" : field + " : TEXT*20;";
         return Files.writeString(work.resolve(model + ".ili"), """
                 INTERLIS 2.%d;
                 MODEL %s (en) AT "https://example.org/interlis/db" VERSION "1" =
                   IMPORTS %s;
                   TOPIC Data EXTENDS %s.Data =
-                    CLASS %s EXTENDS %s.Data.%s = %s : TEXT*20; END %s;
+                    CLASS %s EXTENDS %s.Data.%s = %s END %s;
                   END Data;
                 END %s.
-                """.formatted(version - 20, model, original, original, type, original, base, field, type, model));
+                """.formatted(version - 20, model, original, original, type, original, base, declaration, type, model));
     }
 
     Path specializedInput(String prefix) throws Exception {
+        return specializedInput(prefix, "<Extra>local</Extra>");
+    }
+
+    Path specializedInputWithoutFields(String prefix) throws Exception {
+        return specializedInput(prefix, "");
+    }
+
+    private Path specializedInput(String prefix, String fields) throws Exception {
         return transfers.data(specialized, prefix, transfers.object(specialized, "SpecializedEntry", prefix + "-specialized",
-                inheritedFields() + "<Extra>local</Extra>"));
+                inheritedFields() + fields));
     }
 
     Path fragmentSource(String model, String type) throws Exception {
@@ -97,12 +110,20 @@ final class SmartModelExtensionFixtures {
     }
 
     void assertSpecializedDelivery(Path output, String prefix) throws Exception {
+        assertSpecializedDelivery(output, prefix, "local");
+    }
+
+    void assertSpecializedDeliveryWithoutFields(Path output, String prefix) throws Exception {
+        assertSpecializedDelivery(output, prefix, null);
+    }
+
+    private void assertSpecializedDelivery(Path output, String prefix, String extra) throws Exception {
         var object = transfers.rows(output, prefix, 1).getFirst();
         assertEquals(version == 23 ? specialized + ".Data.SpecializedEntry" : "SpecializedEntry", object.getLocalName());
         assertEquals(prefix + "-specialized", id(object, version, "tid"));
         assertEquals("inherited", child(object, "Label").getTextContent());
         assertEquals("17", child(object, "Quantity").getTextContent());
-        assertEquals("local", child(object, "Extra").getTextContent());
+        assertEquals(extra, DbTestSupport.text(object, "Extra"));
     }
 
     Path externalRoleSource(String model, String target) throws Exception {

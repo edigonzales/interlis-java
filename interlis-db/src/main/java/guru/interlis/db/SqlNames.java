@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 
 /** Allocates names in declaration order for the default ili2db 5.5.2 mapping. */
 final class SqlNames {
+    record ReferenceMapping(String path, String owner, String target) { }
+
     private static final int NAME_LENGTH = 60;
     private static final int MODEL_LENGTH = 14;
     private static final int TOPIC_LENGTH = 17;
@@ -23,17 +25,17 @@ final class SqlNames {
     private final Set<String> tables = new HashSet<>();
     private final Map<String, Set<String>> columns = new HashMap<>();
     private final Map<String, String> storedClasses;
-    private final Set<String> storedAttributes;
+    private final Map<ReferenceMapping, String> storedReferences;
     private final Map<String, String> storedStrategies;
 
     SqlNames() {
-        this(Map.of(), Set.of(), Map.of(), Set.of(), Map.of());
+        this(Map.of(), Set.of(), Map.of(), Map.of(), Map.of());
     }
 
     SqlNames(Map<String, String> storedClasses, Set<String> relations, Map<String, Set<String>> storedColumns,
-             Set<String> storedAttributes, Map<String, String> storedStrategies) {
+             Map<ReferenceMapping, String> storedReferences, Map<String, String> storedStrategies) {
         this.storedClasses = Map.copyOf(storedClasses);
-        this.storedAttributes = Set.copyOf(storedAttributes);
+        this.storedReferences = Map.copyOf(storedReferences);
         this.storedStrategies = Map.copyOf(storedStrategies);
         relations.forEach(name -> tables.add(Ili2dbLayout.foldedName(name)));
         storedClasses.values().forEach(name -> tables.add(Ili2dbLayout.foldedName(name)));
@@ -48,9 +50,10 @@ final class SqlNames {
 
     boolean hasTable(String name) { return tables.contains(Ili2dbLayout.foldedName(name)); }
 
-    boolean hasAttribute(String name) { return storedAttributes.contains(name); }
-
-    SqlNames copy() { return new SqlNames(storedClasses, tables, columns, storedAttributes, storedStrategies); }
+    String storedReference(String path, String owner, String target, boolean gpkg) {
+        return storedReferences.get(new ReferenceMapping(path,
+                gpkg ? Ili2dbLayout.foldedName(owner) : owner, gpkg ? Ili2dbLayout.foldedName(target) : target));
+    }
 
     String mappedTable(String declared, String model, String topic, String className) {
         String prior = storedClasses.get(declared);

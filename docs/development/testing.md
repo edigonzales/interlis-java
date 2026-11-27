@@ -282,9 +282,12 @@ selben Schema, Rollback bei einem späteren fremden Basket oder einem
 mehrdeutigen Ziel sowie Datensatzänderungen mit eingehenden Referenzen.
 
 `ModelExtensionStorageTest` prüft widersprüchliche Modellquellen und
-Settings sowie den Abbruch während der DDL. Katalog und bestehende IDs
-bleiben nach dem Rollback erhalten. Die Wiederholung ergänzt das Schema
-und prüft die gespeicherten Daten beider Modelle.
+Einstellungen sowie Erweiterungen, die bestehende Tabellen ändern würden.
+Die Gegenproben prüfen die konkrete Zuordnung in der Diagnose und erhalten
+Katalog, Metadaten, Fachzeilen und IDs. Beim Abbruch während einer
+additiven DDL und der anschliessenden Wiederholung prüft der Test die
+Transaktion. Ein per SQL aufgebautes Smart2-Layout mit unsuffigierter
+Zielspalte prüft den Zielwechsel beim Update und den anschliessenden Export.
 
 ## ili2db-Interoperabilität
 
@@ -481,31 +484,22 @@ ili2db-Export folgt auf ein selektives natives Update. Ein Folgeimport
 überprüft die gemeinsame ID-Vergabe. Die Auswahl `*ImportedTopic*` prüft
 `DEPENDS ON` mit einem separaten Zieldatensatz und zwei Referenzformen.
 
-`--tests '*ModelExtensionInteropTest'` ergänzt ein befülltes ili2db-Schema
-mit `--add-models`, je mit und ohne `--sqlEnableNull`. Beide Werkzeuge
-exportieren den bestehenden Datensatz.
-Die Mischläufe prüfen den Austausch des neuen Datensatzes, die Rückverweise
-für obligatorische Einzelwerte in der gemeinsamen Strukturtabelle und die
-fortgesetzte ID-Vergabe.
-Die `smart2*`-Fälle vergleichen das Ergänzen eines unabhängigen Modells
-mit ili2db und prüfen die geerbten Spalten in den neuen konkreten Tabellen.
-Die `smart1*Subtype*`-Fälle vergleichen gemeinsame Tabellen, das Ergänzen
-von `T_Type` und die erweiterten Typchecks. `ModelExtensionStorageTest`
-prüft zusätzlich die alten Zeilen, die SQL-Checks und den Rollback der DDL.
-Die `smart1Fragment*`-Fälle ergänzen nacheinander zwei Fragmenttabellen
-und prüfen die gemeinsame Objekt- und Basket-ID mit der bestehenden Wurzel.
-Die `smart1SubtypeStructures*`-Fälle prüfen zusätzliche Rückverweisspalten
-in einer belegten Strukturtabelle. Für den ili2db-Import verwendet die
-XTF-2.4-Fixture je Listenelement eine Attributhülle.
+`--tests '*ModelExtensionInteropTest'` vergleicht additive Erweiterungen
+eines befüllten Schemas mit dem gestuften ili2db-Schemaimport. Die
+Mischläufe prüfen unabhängige Modelle, gemeinsame Domänen, externe
+Rollen in neuen Tabellen, Smart2-Untertypen mit eigener Tabelle und
+einen Smart1-Untertyp mit passendem `T_Type`. Der strikte Fall prüft
+`NOT NULL` in der hinzugefügten Tabelle. Beide Werkzeuge lesen die
+bestehenden Daten und tauschen Daten im erweiterten Schema aus.
+Ein ili2db-Folgeimport prüft die gemeinsame ID-Vergabe.
 
-`--tests '*SmartReferenceExtensionInteropTest'` prüft Smart2-Zielspalten
-für bestehende Rollen und Referenzattribute. Die Fälle vergleichen
-Metadaten und Fremdschlüssel und tauschen Daten in beiden Werkzeugrichtungen
-aus. `ModelExtensionStorageTest` prüft dazu Rollback, Zielwechsel beim
-Update und einen Export mit konkurrierenden Zielspalten.
-Die `linkTable*`-Fälle prüfen denselben Werkzeugwechsel für anonyme
-n:m-Linkzeilen. Die XTF-2.3-Prüfung berücksichtigt, dass ili2db 5.5.2
-externe Ziele mit `REF` allein ausgibt.
+Der Transfer von Smart1-Fragmenten, gemeinsam genutzten Strukturlisten
+und polymorphen Smart2-Referenzen verwendet vollständig aufgebaute
+Schemata. `--tests '*SmartReferenceInteropTest'` prüft eingebettete Rollen,
+Referenzattribute und anonyme n:m-Linkzeilen.
+Im Smart1-Fragmentfall wird der Basket des Basismodells mit `interlis-db`
+importiert, da ili2db 5.5.2 bei diesem Import `T_Type` leer lässt. Die
+Fragmente werden in beiden Werkzeugrichtungen ausgetauscht.
 
 `--tests '*ExportSelectionInteropTest.*Baskets*'` vergleicht die
 Basket-Auswahl mit ili2db `--baskets` und importiert die XTF-Dateien mit

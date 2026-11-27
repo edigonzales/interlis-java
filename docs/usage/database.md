@@ -295,84 +295,36 @@ interlis-db schemaimport --add-models --gpkg data.gpkg \
 ```
 
 `--add-models` ergänzt ein vorhandenes ili2db-Schema in einer
-Transaktion. Das Kommando übernimmt dessen Einstellungen, die
-gespeicherten SQL-Zuordnungen und die gemeinsame ID-Vergabe.
-Zusätzliche lokale Abhängigkeiten werden wie bei der Schemaerzeugung
-mit `--model-file` angegeben. Identische gespeicherte Quellen und
-bereits abgebildete Abhängigkeiten werden wiederverwendet. Eine
-Übersetzung zu einem vorhandenen Original wird als Modellquelle ergänzt
-und verwendet dessen Fachtabellen. Eine
-gemeinsam genutzte Strukturtabelle erhält die zusätzlichen
-Rückverweisspalten für neue Eigentümer. Ein bereits abgebildetes
-ausgewähltes Modell, eine abweichende gespeicherte Quelle oder eine
-widersprüchliche Schemaoption führt zum Abbruch.
+Transaktion. Ab `interlis-db 0.4.0-SNAPSHOT` beschränkt sich die
+Erweiterung auf neue Tabellen und ergänzende Metadaten. Der Befehl
+übernimmt die gespeicherten Einstellungen, SQL-Zuordnungen und die
+gemeinsame ID-Vergabe. Neue Tabellen dürfen Fremdschlüssel auf bestehende
+Tabellen erhalten.
 
-Im nullable Smart2-Profil kann `--add-models` unabhängige Modelle und
-Modelle mit gemeinsamen skalaren Domänen ergänzen. Die gespeicherte
-Quellversion einer gemeinsamen Domäne muss mit der über `--model-file`
-angegebenen Quelle übereinstimmen. Die konkreten Tabellen erhalten die
-geerbten Spalten gemäss dem gespeicherten Profil.
-Gemeinsam genutzte Strukturtabellen erhalten auch in Smart2 die nullable
-Rückverweisspalten für die neuen Eigentümer. Bei einer nachträglichen
-Smart2-Erweiterung konnte ili2gpkg 5.5.2 in XTF 2.3 und 2.4 die Einträge in
-`ATTRNAME` schreiben, ohne diese SQL-Spalten anzulegen. Der folgende Import
-scheiterte an den fehlenden Spalten. Das von `interlis-db` ergänzte Schema
-verwendet die Spaltenabbildung eines gemeinsamen Schemaimports beider Modelle.
+Identische Modellquellen und bereits abgebildete Abhängigkeiten werden
+wiederverwendet. Zusätzliche lokale Quellen werden mit `--model-file`
+angegeben. Eine Übersetzung zu einem vorhandenen Original kann dessen
+Fachtabellen verwenden. Ein bereits abgebildetes ausgewähltes Modell,
+eine abweichende gespeicherte Quelle oder widersprüchliche Einstellungen
+führen zum Abbruch.
 
-Ein neues Modell kann in Smart2 ein bestehendes Topic erweitern und einen
-konkreten Untertyp mit vollständiger eigener Tabelle ergänzen. Die gespeicherten
-SQL-Namen und Vererbungsstrategien der Basistypen gelten weiterhin. Benötigt
-eine bestehende ungeordnete eingebettete Rolle mit mehreren Zieltabellen
-eine weitere Zielspalte, ergänzt `--add-models` diese samt Fremdschlüssel-
-Metadaten in der bisherigen Eigentümertabelle. Fremdschlüssel und Indizes
-folgen den gespeicherten Optionen. Die bisherigen Zielspalten bleiben
-nutzbar. Das gilt auch, wenn die Rolle bisher genau eine unsuffigierte
-Zielspalte hatte. Ihr Name bleibt erhalten, die neue Spalte erhält den
-Suffix der neuen Zieltabelle. Dieselbe Erweiterung gilt für einfache
-`REFERENCE TO`-Attribute in flachen Strukturen und für direkte
-Referenzattribute in Klassen mit XTF 2.4. Für weitere Referenzabbildungen
-nennt ein Abbruch die betroffene Rolle oder das Attribut.
+Im nullable Smart1- und Smart2-Profil lassen sich unabhängige Modelle
+und Modelle mit gemeinsamen skalaren Domänen ergänzen. Ein
+Smart2-Untertyp kann eine eigene Tabelle erhalten, wenn bestehende
+Referenzzuordnungen dafür ausreichen. Für einen neuen Typ mit bestehender
+Wurzeltabelle muss deren `T_Type` bereits passen. Das Hinzufügen eines
+konkreten Typs setzt dabei ein Profil ohne `--create-type-constraint` voraus.
 
-Eine eigenständige, anonyme n:m-Assoziation ohne eigene Attribute kann
-auch in ihrer bestehenden Smart2-Beziehungstabelle ein weiteres Ziel
-erhalten. Das gilt für eine ungeordnete `EXTERNAL`-Rolle mit mehreren
-bisherigen Zielspalten. Die neuen Spalten, Schlüssel und Indizes folgen
-dem gespeicherten Profil. Beim gestuften Schemaimport mit ili2gpkg 5.5.2
-ergänzte die Referenzprobe `ATTRNAME`, liess aber die physische Spalte weg.
-Der gemeinsame Schemaimport erzeugte die vollständige Abbildung.
-
-Im nullable Smart1-Profil ergänzt `--add-models` unabhängige Modelle und
-skalare Untertypen in einer bestehenden Tabelle mit `T_Type`.
-Die neuen Fachspalten sind nullable und übernehmen die aktiven SQL-Checks
-für Zahlen, Texte und Zeitwerte des Schemas. Die Liste der Typwerte umfasst auch
-Untertypen aus früheren Erweiterungen. Beim erneuten `--schemaimport` mit
-ili2gpkg 5.5.2 fehlten in der Probe die physischen Spalten des Untertyps.
-Die Katalogreferenz ist hier der gemeinsame Schemaimport beider Modelle.
-Speicherte die Tabelle vorher genau einen konkreten Typ, ergänzt
-`--add-models` die Spalte `T_Type`, übernimmt den vorhandenen Typ in alle
-bisherigen Zeilen und setzt `NOT NULL`. Die Spalte erhält keinen Default.
-Bei `--create-type-constraint` erweitert `--add-models` auch einen eindeutig
-identifizierten benannten Typcheck. Ältere GeoPackage-Schemata mit anonymem
-Typcheck werden vor der DDL abgewiesen. Neue Typchecks erhalten einen Namen.
-
-Führt eine neue abstrakte Zwischenklasse in Smart1 zu einer eigenen Tabelle
-für den konkreten Untertyp, erhält die bestehende Wurzel den zusätzlichen
-`T_Type`-Wert. Die Fragmenttabelle speichert die skalaren Felder der
-Zwischenklasse und des Untertyps. Wurzel und Fragment teilen `T_Id` und
-`T_Basket`. Weitere Erweiterungen berücksichtigen die bereits gespeicherten
-Fragmente auch bei einer separat gelieferten Modellquelle.
-
-Ein gemeinsam gespeicherter Smart1-Untertyp kann optionale Einzelstrukturen
-und `LIST OF` mit flachen skalaren Strukturtypen ergänzen. Die neuen
-nullable Rückverweisspalten stehen in der Strukturtabelle und zeigen auf
-die gemeinsame Klassentabelle. Bestehende Strukturzeilen behalten ihre
-Zuordnung. Ein Update kann die Liste kürzen und erhält die ID des Elternobjekts.
-
-In Smart1 und Smart2 kann ein neues Modell externe eingebettete Rollen auf
-Klassen in bereits abgebildeten Topics ergänzen. Die Rollenspalten stehen
-in der neuen Eigentümertabelle. Bei einem abstrakten Ziel bestimmt die
-gespeicherte Vererbungsabbildung die konkreten Zieltabellen. Fehlende
-Klassenzuordnungen und inkonsistente Zieltabellen führen zum Abbruch.
+Braucht das neue Modell eine Änderung an einer bestehenden Fachtabelle,
+bricht der Befehl vor dem Schreiben ab und nennt die betroffene
+Zuordnung. Das betrifft beispielsweise einen zusätzlichen Rückverweis
+in einer gemeinsamen Strukturtabelle, neue Smart2-Zielspalten und einen
+zu ändernden Typcheck. Beim erneuten Schemaimport mit ili2db 5.5.2
+können für solche Fälle Mappingzeilen entstehen, obwohl die
+zugehörigen Spalten fehlen. Für diese Modelle lassen sich die
+vollständigen Tabellen durch einen gemeinsamen Schemaimport in ein
+neues Ziel anlegen. Bereits vollständig aufgebaute Schemata aus
+früheren Erweiterungen bleiben für den Transfer verwendbar.
 
 ## Aufruf
 
@@ -526,10 +478,10 @@ Der Transfer liest auch Referenzschemata ohne `--sqlEnableNull`. Bei direkt
 gespeicherten Pflichtwerten setzt die Datenbank die vorhandenen `NOT NULL`-
 Bedingungen durch. `schemaimport --add-models` übernimmt das
 Nullbarkeitsprofil des bestehenden `newClass`-Schemas. Für neue Tabellen
-gelten dieselben Pflichtspaltenregeln wie bei der Neuanlage. Neue
-Besitzerspalten in gemeinsam verwendeten Strukturtabellen bleiben nullable.
-Das gilt auch für einen als `MANDATORY` deklarierten Einzelwert. Der
-DB-Transfer kann eine Elternzeile ohne Strukturwert importieren und exportieren.
+gelten dieselben Pflichtspaltenregeln wie bei der Neuanlage. Die
+Besitzerspalten in Strukturtabellen bleiben auch für einen als `MANDATORY`
+deklarierten Einzelwert nullable. Der DB-Transfer kann eine Elternzeile
+ohne Strukturwert importieren und exportieren.
 Die Vollständigkeit prüft der separat aufgerufene [Validator](validator.md).
 
 `schemaimport --sql-not-null` erzeugt ein striktes `newClass`-Schema für

@@ -159,7 +159,6 @@ final class SchemaSql {
         for (var lookup : plan.enumLookups()) {
             if (lookup.create()) commands.add(enumTable(lookup, dialect));
         }
-        var storage = new java.util.HashSet<>(plan.addedStorageTables());
         for (var table : plan.addedTables()) {
             var columns = new ArrayList<String>();
             columns.add(dialect.primaryId() + (table.subtype() ? "" : dialect.sequenceDefault()));
@@ -215,41 +214,6 @@ final class SchemaSql {
                         + (auditColumns.isEmpty() ? "" : ", " + String.join(", ", auditColumns)),
                         inlineKeys.getOrDefault(geometry.table(), List.of())));
             }
-        }
-        for (var composition : plan.addedCompositions()) {
-            String child = plan.mapping().table(composition.childRoot()).name();
-            if (!storage.contains(child)) {
-                String reference = createForeignKeys && dialect.gpkg()
-                        ? " " + dialect.references(plan.mapping().table(composition.parent()).name()) : "";
-                commands.add("ALTER TABLE " + dialect.table(child) + " ADD COLUMN "
-                        + quote(composition.ownerColumn()) + " " + dialect.idType() + reference);
-            }
-        }
-        for (var change : plan.discriminatorChanges()) {
-            String table = dialect.table(change.table());
-            change.initialType().ifPresent(type -> {
-                commands.add("ALTER TABLE " + table + " ADD COLUMN " + TYPE_COLUMN + " " + dialect.text(60));
-                commands.add("UPDATE " + table + " SET " + TYPE_COLUMN + " = " + literal(type));
-                commands.add("ALTER TABLE " + table + " ALTER COLUMN " + TYPE_COLUMN + " SET NOT NULL");
-            });
-            if (plan.schemaOptions().contains(Ili2dbLayout.SchemaOption.TYPE_CONSTRAINT)) {
-                change.existingCheck().ifPresent(name -> commands.add("ALTER TABLE " + table + " DROP CONSTRAINT " + quote(name)));
-                String name = change.existingCheck().orElseGet(() -> typeCheckName(change.table()));
-                commands.add("ALTER TABLE " + table + " ADD CONSTRAINT " + quote(name) + " " + typeCheck(change.types()));
-            }
-        }
-        for (var addition : plan.addedColumns()) {
-            var field = addition.field();
-            String type = field.scalarText(plan.schemaOptions()) ? "TEXT" : dialect.columnType(field, 0);
-            var definition = new ArrayList<String>();
-            definition.add(quote(field.name()) + " " + type);
-            addColumnChecks(definition, addition.checks());
-            commands.add("ALTER TABLE " + dialect.table(addition.table()) + " ADD COLUMN " + String.join(" ", definition));
-        }
-        for (var reference : plan.addedReferences()) {
-            String foreignKey = createForeignKeys && dialect.gpkg() ? " " + dialect.references(reference.target()) : "";
-            commands.add("ALTER TABLE " + dialect.table(reference.table()) + " ADD COLUMN " + quote(reference.column())
-                    + " " + dialect.idType() + foreignKey);
         }
         if (createGeometryIndexes) {
             for (String table : plan.addedStorageTables()) {
@@ -433,31 +397,6 @@ final class SchemaSql {
                 row(classes, name, association.name());
                 row(inheritance, name, null);
                 row(transformations, name, INHERITANCE_TAG, EMBEDDED);
-            }
-            for (var addition : plan.addedColumns()) {
-                token.throwIfCancellationRequested();
-                var field = addition.field();
-                row(attributes, field.slot().name().declared().toString(), field.name(), addition.table(), null);
-            }
-            for (var reference : plan.addedReferences()) {
-                token.throwIfCancellationRequested();
-                row(attributes, reference.path(), reference.column(), reference.table(), reference.target());
-                row(colProps, reference.table(), null, reference.column(), PREFIX + "foreignKey", reference.target());
-            }
-            if (!plan.discriminatorChanges().isEmpty()) {
-                String sql = "UPDATE " + d.table(COLUMN_PROP)
-                        + " SET setting = ? WHERE tablename = ? AND lower(columnname) = ? AND tag = ? AND subtype IS NULL";
-                try (var update = connection.prepareStatement(sql)) {
-                    for (var change : plan.discriminatorChanges()) {
-                        token.throwIfCancellationRequested();
-                        String types = new com.google.gson.Gson().toJson(change.types());
-                        if (change.initialType().isPresent()) {
-                            row(colProps, change.table(), null, TYPE_COLUMN, PREFIX + "types", types);
-                        } else {
-                            row(update, types, change.table(), Ili2dbLayout.T_TYPE, PREFIX + "types");
-                        }
-                    }
-                }
             }
             for (var property : plan.columnProperties()) {
                 token.throwIfCancellationRequested();
@@ -660,7 +599,7 @@ final class SchemaSql {
             return "FOREIGN KEY (" + quote(column) + ") " + references(key.target());
         }
 
-        String references(String target) {
+        private String references(String target) {
             return "REFERENCES " + (gpkg ? quote(target) : table(target)) + " DEFERRABLE INITIALLY DEFERRED";
         }
 
