@@ -167,11 +167,37 @@ final class ProfileFixtures {
                 """.formatted(direct));
     }
 
+    Path checkedReferenceModel(String model) throws IOException {
+        String direct = version == 24 ? "DirectSite : REFERENCE TO Site;" : "";
+        return source(model, """
+                CLASS Site = Label : MANDATORY TEXT*30; END Site;
+                STRUCTURE SiteDetail =
+                  AssignedSite : REFERENCE TO Site;
+                  AssignedSite1 : TEXT*20;
+                END SiteDetail;
+                CLASS Asset = Detail : SiteDetail; %s END Asset;
+                ASSOCIATION Review =
+                  ReviewSite -- {0..1} Site;
+                  Reviewed -- {0..*} Asset;
+                END Review;
+                """.formatted(direct));
+    }
+
+    String checkedAsset(String model, String tid, String targetTid) {
+        return referringAsset(model, tid, targetTid, true);
+    }
+
     String referringAsset(String model, String tid, String targetTid) {
+        return referringAsset(model, tid, targetTid, false);
+    }
+
+    private String referringAsset(String model, String tid, String targetTid, boolean checked) {
         String structure = version == 23 ? model + ".Data.SiteDetail" : "SiteDetail";
         String fields = targetTid == null ? "" : reference("AssignedSite", targetTid);
+        if (checked) fields += "<AssignedSite1>kept</AssignedSite1>";
         String direct = version == 24 && targetTid != null ? reference("DirectSite", targetTid) : "";
-        return object(model, "Asset", tid, "<Detail><" + structure + ">" + fields + "</" + structure + "></Detail>" + direct);
+        String role = checked && targetTid != null ? reference("ReviewSite", targetTid) : "";
+        return object(model, "Asset", tid, "<Detail><" + structure + ">" + fields + "</" + structure + "></Detail>" + direct + role);
     }
 
     Path nestedStructureModel(String model) throws IOException {

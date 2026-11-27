@@ -24,6 +24,7 @@ final class SqlNames {
 
     private final Set<String> tables = new HashSet<>();
     private final Map<String, Set<String>> columns = new HashMap<>();
+    private final Map<String, Map<String, String>> referenceCheckNames = new HashMap<>();
     private final Map<String, String> storedClasses;
     private final Map<ReferenceMapping, String> storedReferences;
     private final Map<String, String> storedStrategies;
@@ -102,6 +103,14 @@ final class SqlNames {
 
     String column(String table, String attribute) {
         return allocateColumn(table, preferred(attribute));
+    }
+
+    void reserveReferenceCheck(String table, String column, String attribute) {
+        referenceCheckNames.computeIfAbsent(table, ignored -> new HashMap<>()).put(column, column(table, attribute));
+    }
+
+    String referenceCheckName(String table, String column) {
+        return referenceCheckNames.getOrDefault(table, Map.of()).get(column);
     }
 
     void reserveColumn(String table, String name) {

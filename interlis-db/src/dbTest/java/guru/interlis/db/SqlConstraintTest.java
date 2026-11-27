@@ -492,15 +492,48 @@ final class SqlConstraintTest {
 
     @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
     @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
+    void mandatoryChecksBindForwardReferencesAndEnforceTheBackendProfile(Backend backend, int version) throws Exception {
+        withDatabase(backend, db -> {
+            String model = "SqlMandatoryChecks";
+            var fixture = new ProfileFixtures(work, version);
+            DbTestSupport.assertSchemaWithIdentityColumns(db, model, fixture.checkedReferenceModel(model),
+                    "--sql-not-null", "--create-mandatory-checks", "--create-fk");
+            String asset = fixture.checkedAsset(model, "original-asset", "original-site");
+            assertCliSuccess(db, "import", model, "original", fixture.data(model, "original",
+                    asset + fixture.assignedSite(model, "original")));
+            assertCliFailure(db, "import", model, "unresolved", fixture.data(model, "unresolved",
+                    fixture.checkedAsset(model, "unresolved-asset", "absent")), "to absent");
+
+            var missing = fixture.data(model, "broken",
+                    fixture.checkedAsset(model, "broken-valid", "broken-site") + fixture.assignedSite(model, "broken")
+                            + fixture.checkedAsset(model, "broken-optional", null));
+            try (var sql = db.connect()) {
+                if (db.postgis()) {
+                    assertCliFailure(db, "import", model, "broken", missing, importSqlDiagnostic(db, "23514"));
+                    assertRolledBack(db, sql, 1, 1);
+                    var role = assertThrows(SQLException.class,
+                            () -> execute(sql, "UPDATE " + db.table("asset") + " SET reviewsite=NULL"));
+                    assertEquals("23514", role.getSQLState());
+                    var attribute = assertThrows(SQLException.class,
+                            () -> execute(sql, "UPDATE " + db.table("sitedetail") + " SET assignedsite=NULL"));
+                    assertEquals("23514", attribute.getSQLState());
+                } else {
+                    assertRolledBack(db, sql, 1, 1);
+                    assertCliSuccess(db, "import", model, "broken", missing);
+                    assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("asset") + " WHERE reviewsite IS NULL"));
+                    assertEquals("1", scalar(sql, "SELECT count(*) FROM " + db.table("sitedetail") + " WHERE assignedsite IS NULL"));
+                }
+            }
+        });
+    }
+
+    @ParameterizedTest(name = "{displayName} [{0}, XTF {1}]")
+    @CsvSource({"GEOPACKAGE,23", "GEOPACKAGE,24", "POSTGIS,23", "POSTGIS,24"})
     void requiredReferenceAttributesRemainNullableAndRollBackUnresolvedTargets(Backend backend, int version) throws Exception {
         withDatabase(backend, db -> {
             String model = "SqlRequiredReference";
             var fixture = new ProfileFixtures(work, version);
             var ili = fixture.requiredReferenceModel(model);
-            var strictChecks = schemaWithIdentityColumns(db, model, ili, CancellationToken.none(),
-                    "--sql-not-null", "--create-mandatory-checks");
-            assertEquals(2, strictChecks.code(), strictChecks::diagnostics);
-            assertTrue(strictChecks.diagnostics().contains("cannot be combined"), strictChecks::diagnostics);
             DbTestSupport.assertSchemaWithIdentityColumns(db, model, ili, "--sql-not-null", "--create-fk");
             assertCliSuccess(db, "import", model, "nullable", fixture.data(model, "nullable",
                     fixture.referringAsset(model, "nullable-asset", null)));

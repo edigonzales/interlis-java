@@ -245,6 +245,44 @@ final class SchemaProfileCases {
         }
     }
 
+    void mandatoryChecks(TestDatabase expected, TestDatabase own) throws Exception {
+        String model = "ProfileMandatoryChecks" + version;
+        Path ili = fixtures.checkedReferenceModel(model);
+        referenceSchema(expected, ili, "--createMandatoryChecks", "--createFk");
+        schema(own, model, ili, "--sql-not-null", "--create-mandatory-checks", "--create-fk");
+        mixedObjects(expected, own, model, 2, prefix -> fixtures.checkedAsset(model, prefix + "-asset", prefix + "-site")
+                        + fixtures.assignedSite(model, prefix),
+                (prefix, rows) -> {
+                    var asset = rows.getFirst();
+                    assertEquals(prefix + "-site", targetTid(child(asset, "ReviewSite")));
+                    var detail = children(child(asset, "Detail")).getFirst();
+                    assertEquals(prefix + "-site", targetTid(child(detail, "AssignedSite")));
+                    assertEquals("kept", child(detail, "AssignedSite1").getTextContent());
+                    if (version == 24) assertEquals(prefix + "-site", targetTid(child(asset, "DirectSite")));
+                });
+        for (var db : List.of(expected, own)) {
+            try (var sql = db.connect()) {
+                if (db.postgis()) {
+                    var expectedChecks = new HashSet<>(Set.of(
+                            "asset:ili_reviewsite:CHECK ((reviewsite IS NOT NULL))",
+                            "sitedetail:ili_assignedsite1:CHECK ((assignedsite IS NOT NULL))"));
+                    if (version == 24) expectedChecks.add("asset:ili_directsite1:CHECK ((directsite IS NOT NULL))");
+                    assertEquals(expectedChecks, catalogKeys(sql, """
+                            SELECT t.relname || ':' || c.conname || ':' || pg_get_constraintdef(c.oid)
+                            FROM pg_constraint c JOIN pg_class t ON t.oid=c.conrelid
+                            JOIN pg_namespace n ON n.oid=t.relnamespace
+                            WHERE n.nspname='%s' AND t.relname IN ('asset','sitedetail') AND c.contype='c'
+                            """.formatted(db.schema())));
+                } else {
+                    assertEquals("0", scalar(sql, """
+                            SELECT count(*) FROM sqlite_schema WHERE type='table' AND name IN ('asset','sitedetail')
+                              AND upper(sql) LIKE '%CHECK%'
+                            """));
+                }
+            }
+        }
+    }
+
     private void assertRequiredReferences(Path output, String prefix) throws Exception {
         var asset = fixtures.rows(output, prefix, 2).stream()
                 .filter(row -> (prefix + "-asset").equals(id(row, version, "tid"))).findFirst().orElseThrow();

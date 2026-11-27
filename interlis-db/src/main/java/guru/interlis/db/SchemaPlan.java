@@ -76,7 +76,9 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
 
     record TemporalCheck(String column, String sqlType, String minimum, String maximum) { }
 
-    record ColumnChecks(List<NumericCheck> numbers, List<TextCheck> texts, List<TemporalCheck> times) { }
+    record ReferenceCheck(DbMapping.Column column, String name) { }
+    record ColumnChecks(List<NumericCheck> numbers, List<TextCheck> texts, List<TemporalCheck> times,
+                        List<ReferenceCheck> mandatoryReferences) { }
 
     record ForeignKey(String table, String column, String target, boolean index) {
         ForeignKey(String table, String column, String target) { this(table, column, target, true); }
@@ -104,8 +106,9 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                            DbEnumOptions enumOptions, Set<SchemaOption> schemaOptions, boolean sqlNotNull, CancellationToken token)
             throws IOException {
         DbScalarText.checkProfile(schemaOptions, enumOptions, transformations);
-        if (sqlNotNull && schemaOptions.contains(SchemaOption.MANDATORY_CHECKS)) {
-            throw DbMapping.unsupported("strict schemas with active mandatory checks");
+        boolean mandatoryChecks = sqlNotNull && schemaOptions.contains(SchemaOption.MANDATORY_CHECKS);
+        if (mandatoryChecks && inheritance != DbInheritance.Profile.NEW_CLASS) {
+            throw DbMapping.unsupported("active mandatory checks outside newClass inheritance");
         }
         var files = new ArrayList<Path>();
         files.add(file);
@@ -126,7 +129,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         var inputModels = srsModels.map(DbCrsPair.Models::names).orElse(models);
         var compiled = DbModelSources.compile(inputModels, sources.values(), "model files", token);
         var mapping = DbMapping.planNew(compiled.plan(), gpkg, splitGeometries, defaultEpsg, multiSrs,
-                srsModels, names, inheritance, transformations, strokeArcs, enumOptions, schemaOptions, token);
+                srsModels, names, inheritance, transformations, strokeArcs, enumOptions, schemaOptions, mandatoryChecks, token);
         var declarations = mapping.plan().models().stream()
                 .map(model -> (ModelSymbol) symbol(mapping, model.symbol()))
                 .collect(Collectors.groupingBy(model -> origin(model).range().source()));
@@ -159,6 +162,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
         var geometries = new HashMap<String, List<GeometryColumn>>();
         var uniqueKeys = new HashMap<String, List<List<String>>>();
         var columnChecks = new HashMap<String, ColumnChecks>();
+        var required = sqlNotNull ? requiredColumns(mapping, addedTables, multiSrs) : Map.<String, Set<String>>of();
         Map<SymbolId, List<ConstraintSymbol>> constraints = schemaOptions.contains(SchemaOption.UNIQUE)
                 ? uniqueConstraints(mapping) : Map.of();
         for (var table : addedTables) {
@@ -185,7 +189,10 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
             }
             var rules = constraints.get(table.object().symbol().symbol());
             if (rules != null) uniqueKeys.put(table.name(), uniqueKeys(mapping, table, rules));
-            columnChecks.put(table.name(), columnChecks(table.columns(), gpkg, schemaOptions));
+            var mandatory = mandatoryChecks
+                    ? mandatoryReferenceChecks(mapping, table, required.getOrDefault(table.name(), Set.of()), names)
+                    : List.<ReferenceCheck>of();
+            columnChecks.put(table.name(), columnChecks(table.columns(), gpkg, schemaOptions, mandatory));
         }
         for (var composition : addedCompositions) {
             token.throwIfCancellationRequested();
@@ -198,7 +205,7 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
                 splitGeometries, defaultEpsg, multiSrs, strokeArcs, enumOptions, transformations,
                 enumLookups, Map.copyOf(uniqueKeys), Map.copyOf(columnChecks),
                 schemaOptions.contains(SchemaOption.META_INFO) ? DbMetaInfo.plan(mapping, token) : List.of(),
-                sqlNotNull, sqlNotNull ? requiredColumns(mapping, addedTables, multiSrs) : Map.of());
+                sqlNotNull, required);
     }
 
     private static Map<String, Set<String>> requiredColumns(DbMapping mapping, List<DbMapping.Table> addedTables,
@@ -260,14 +267,31 @@ record SchemaPlan(DbMapping mapping, List<ModelFile> modelFiles,
 
     Set<SchemaOption> schemaOptions() { return mapping.schemaOptions(); }
 
-    private static ColumnChecks columnChecks(List<DbMapping.Column> columns, boolean gpkg, Set<SchemaOption> options) {
+    private static List<ReferenceCheck> mandatoryReferenceChecks(DbMapping mapping, DbMapping.Table table,
+                                                                  Set<String> required, SqlNames names) {
+        var checks = new ArrayList<ReferenceCheck>();
+        for (var column : table.columns()) {
+            if (column.kind() != DbMapping.Kind.REFERENCE || required.contains(column.name())) continue;
+            if (!mapping.mandatoryCheckReference(table, column)) {
+                throw DbMapping.unsupported("active mandatory check at " + column.slot().name().declared());
+            }
+            String name = column.slot() instanceof AttributeSlot
+                    ? names.referenceCheckName(table.name(), column.name()) : column.name();
+            checks.add(new ReferenceCheck(column, name));
+        }
+        return List.copyOf(checks);
+    }
+
+    private static ColumnChecks columnChecks(List<DbMapping.Column> columns, boolean gpkg, Set<SchemaOption> options,
+                                             List<ReferenceCheck> mandatoryReferences) {
         return new ColumnChecks(
                 options.contains(SchemaOption.NUMERIC_CHECKS) && !options.contains(SchemaOption.SCALAR_TEXT)
                         ? columns.stream().flatMap(SchemaPlan::numericChecks).toList() : List.of(),
                 !gpkg && options.contains(SchemaOption.TEXT_CHECKS)
                         ? columns.stream().flatMap(column -> textChecks(column, options)).toList() : List.of(),
                 !gpkg && options.contains(SchemaOption.DATE_TIME_CHECKS)
-                        ? columns.stream().flatMap(column -> temporalChecks(column, options)).toList() : List.of());
+                        ? columns.stream().flatMap(column -> temporalChecks(column, options)).toList() : List.of(),
+                mandatoryReferences);
     }
 
     private static Stream<TextCheck> textChecks(DbMapping.Column column, Set<SchemaOption> options) {

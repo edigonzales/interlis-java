@@ -1,5 +1,6 @@
 package guru.interlis.db;
 
+import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.NumericType;
 import guru.interlis.model.TextType;
@@ -201,7 +202,7 @@ final class SchemaSql {
             for (var key : plan.uniqueKeys().getOrDefault(table.name(), List.of())) {
                 columns.add("UNIQUE (" + key.stream().map(Database::quote).collect(Collectors.joining(", ")) + ")");
             }
-            addColumnChecks(columns, plan.columnChecks().get(table.name()));
+            addColumnChecks(columns, plan.columnChecks().get(table.name()), dialect.gpkg());
             commands.add(dialect.create(table.name(), String.join(", ", columns), inlineKeys.getOrDefault(table.name(), List.of())));
             for (var geometry : table.secondaryGeometries()) {
                 var column = geometry.column();
@@ -374,6 +375,11 @@ final class SchemaSql {
                     }
                     writeAttributeTransformation(transformations, transformedAttributes, column);
                 }
+                for (var check : plan.columnChecks().get(table.name()).mandatoryReferences()) {
+                    if (check.column().slot() instanceof AttributeSlot attribute) {
+                        row(attributes, attribute.name().declared().toString(), check.name(), table.name(), null);
+                    }
+                }
                 for (var secondary : table.secondaryGeometries()) {
                     var column = secondary.column();
                     String path = column.slot().name().declared().toString();
@@ -499,7 +505,7 @@ final class SchemaSql {
                 .map(value -> value.name().declared().toString()).orElse(null);
     }
 
-    private static void addColumnChecks(List<String> definitions, SchemaPlan.ColumnChecks checks) {
+    private static void addColumnChecks(List<String> definitions, SchemaPlan.ColumnChecks checks, boolean gpkg) {
         for (var check : checks.numbers()) {
             definitions.add("CHECK (" + quote(check.column()) + " BETWEEN " + check.minimum() + " AND " + check.maximum() + ")");
         }
@@ -514,6 +520,12 @@ final class SchemaSql {
             definitions.add("CHECK (" + quote(check.column()) + " BETWEEN "
                     + check.sqlType() + " " + literal(check.minimum()) + " AND "
                     + check.sqlType() + " " + literal(check.maximum()) + ")");
+        }
+        if (!gpkg) {
+            for (var check : checks.mandatoryReferences()) {
+                definitions.add("CONSTRAINT " + quote("ili_" + check.name()) + " CHECK ("
+                        + quote(check.column().name()) + " IS NOT NULL)");
+            }
         }
     }
 

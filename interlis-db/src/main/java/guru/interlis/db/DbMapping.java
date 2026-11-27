@@ -364,7 +364,7 @@ final class DbMapping {
 
     DbMapping(TransferPlan plan, LanguageVersion version, List<Table> tables, List<Composition> compositions,
               List<EmbeddedAssociation> associations, Optional<DbCrsPair> crsPair, List<SymbolRef> selectedModels,
-              DbInheritance inheritance, Set<Ili2dbLayout.SchemaOption> schemaOptions, Map<String, Set<String>> notNullReferences) {
+              DbInheritance inheritance, Set<Ili2dbLayout.SchemaOption> schemaOptions, Map<String, Set<String>> requiredReferences) {
         this.plan = plan;
         this.schemaOptions = Set.copyOf(schemaOptions);
         this.inheritance = inheritance;
@@ -435,10 +435,11 @@ final class DbMapping {
                 .collect(Collectors.toUnmodifiableMap(association -> association.role().symbol(), EmbeddedAssociation::owner));
         var early = new HashMap<String, Set<String>>();
         for (var table : tables) {
-            var required = notNullReferences.getOrDefault(table.name(), Set.of());
+            var required = requiredReferences.getOrDefault(table.name(), Set.of());
             if (required.isEmpty()) continue;
             var references = table.columns().stream().filter(column -> required.contains(column.name())
-                            && (singleTargetEmbeddedRole(table, column) || strictStandaloneLinkRole(table, column)))
+                            && (singleTargetEmbeddedRole(table, column) || strictStandaloneLinkRole(table, column)
+                            || mandatoryCheckReference(table, column)))
                     .map(Column::name).collect(Collectors.toUnmodifiableSet());
             if (!references.isEmpty()) early.put(table.name(), references);
         }
@@ -540,6 +541,14 @@ final class DbMapping {
 
     boolean requiresEmbeddedRole(Table table, RoleSlot role) {
         return role.role().cardinality().lower().signum() > 0 && table.object().symbol().equals(roleOwners.get(role.symbol()));
+    }
+
+    boolean mandatoryCheckReference(Table table, Column column) {
+        if (profile() != DbInheritance.Profile.NEW_CLASS || table.hasDiscriminator() || table.subtype()
+                || column.kind() != Kind.REFERENCE) return false;
+        return singleTargetEmbeddedRole(table, column) || (column.catalogueReference().isEmpty()
+                && column.effectiveType().orElse(null) instanceof ReferenceType reference
+                && simpleLocalReference(plan, reference));
     }
 
     static boolean flatClass(TransferPlan plan, ObjectDescriptor object) {
@@ -758,14 +767,14 @@ final class DbMapping {
                              int defaultEpsg, CancellationToken token) {
         var plan = DbModelSources.compile(List.of(modelName), List.of(source), "model files", token).plan();
         return planNew(plan, gpkg, splitGeometries, defaultEpsg, false, Optional.empty(),
-                new SqlNames(), DbInheritance.Profile.NEW_CLASS, Set.of(), false, DbEnumOptions.DEFAULT, Set.of(), token);
+                new SqlNames(), DbInheritance.Profile.NEW_CLASS, Set.of(), false, DbEnumOptions.DEFAULT, Set.of(), false, token);
     }
 
     static DbMapping planNew(TransferPlan plan, boolean gpkg, boolean splitGeometries,
                              int defaultEpsg, boolean multiSrs, Optional<DbCrsPair.Models> srsModels,
                              SqlNames allocator, DbInheritance.Profile profile, Set<AttributeTransformation> transformations,
                              boolean strokeArcs, DbEnumOptions enumOptions, Set<Ili2dbLayout.SchemaOption> schemaOptions,
-                             CancellationToken token) {
+                             boolean mandatoryChecks, CancellationToken token) {
         var crs = new CrsDefaults(defaultEpsg, 0);
         var crsPair = srsModels.map(pair -> new DbCrsPair(plan, pair, crs, crs));
         var roots = storageRoots(plan, crsPair);
@@ -890,8 +899,14 @@ final class DbMapping {
                     for (var binding : storageColumns(plan, declaration, attribute, crs, crsPair, wrapped,
                             geometryComponents.contains(attribute.symbol()))) {
                         if (binding.kind() == Kind.REFERENCE) {
-                            columns.addAll(planReferences(allocator, names, inheritance, name, discriminator, gpkg,
-                                binding, false, schemaOptions));
+                            var references = planReferences(allocator, names, inheritance, name, discriminator, gpkg,
+                                    binding, false, schemaOptions);
+                            columns.addAll(references);
+                            // ili2db allocates a second ATTRNAME entry to name the constraint.
+                            if (mandatoryChecks && binding.effectiveType().orElse(null) instanceof ReferenceType
+                                    && references.getFirst().kind() == Kind.REFERENCE) {
+                                allocator.reserveReferenceCheck(name, references.getFirst().name(), attributeName);
+                            }
                             continue;
                         }
                         String storageName = multiSrs && binding.kind().geometry() ? attributeName + "_" + binding.epsgCode() : attributeName;

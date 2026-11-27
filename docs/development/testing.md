@@ -374,7 +374,11 @@ gemeinsames Pflichtfeld und die nullable Spalten zweier Geschwistertypen in
 einer Smart1-Tabelle. `*ProfileStrictSmart2*` prüft kopierte
 Pflichtfelder und eine zwingend belegte Rollenspalte auf einer konkreten
 Tabelle. `SqlConstraintTest` prüft stabile IDs beim Update und den Rollback
-bei einem fehlenden Pflichtfeld.
+bei einem fehlenden Pflichtfeld. `*ProfileMandatoryChecks*` vergleicht die
+aktiven PostgreSQL-Prüfungen und nullable GeoPackage-Spalten. Der Mischlauf
+bindet Vorwärtsreferenzen mit Strukturattribut, eingebetteter Rolle und in
+XTF 2.4 direktem Klassenattribut. `SqlConstraintTest` prüft die Rollbacks
+bei fehlenden Zielen und bei der Verletzung eines SQL-Checks.
 `*ProfileNestedStructures*` prüft Einzelwerte, Listen und Bags in
 Strukturen. `*ProfileRequiredHierarchy*` prüft Pflichtfelder und zwei
 Rollen auf dasselbe Ziel in einer `newClass`-Hierarchie.

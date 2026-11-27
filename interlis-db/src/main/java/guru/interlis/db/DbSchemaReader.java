@@ -432,19 +432,58 @@ final class DbSchemaReader {
                 ignoreOtherModelCopies(db, scope, usedNames, attrNames, roleOwners);
             }
         }
-        if (!attrNames.isEmpty()) throw new DbException("Extra ATTRNAME mappings for " + modelName);
-        var notNullReferences = new HashMap<String, Set<String>>();
+        boolean mandatoryChecks = !settings.sqlEnableNull() && settings.inheritance() == DbInheritance.Profile.NEW_CLASS
+                && settings.schemaOptions().contains(Ili2dbLayout.SchemaOption.MANDATORY_CHECKS);
+        var checkedReferences = mandatoryChecks && !db.gpkg() ? mandatoryCheckColumns(db) : Map.<String, Set<String>>of();
+        var requiredReferences = new HashMap<String, Set<String>>();
         for (var table : tables) {
             var notNull = catalog.get(table.object().symbol()).notNull();
+            var checks = checkedReferences.getOrDefault(table.name(), Set.of());
             var references = table.columns().stream().filter(column -> column.kind() == Kind.REFERENCE
-                            && notNull.contains(key(db, column.name())))
+                            && (notNull.contains(key(db, column.name())) || checks.contains(column.name())))
                     .map(Column::name).collect(Collectors.toUnmodifiableSet());
-            if (!references.isEmpty()) notNullReferences.put(table.name(), references);
+            if (!references.isEmpty()) requiredReferences.put(table.name(), references);
         }
         var mapping = new DbMapping(plan, version, tables, compositions, associations, crsPair, requestedRoots,
-                layout, settings.schemaOptions(), notNullReferences);
+                layout, settings.schemaOptions(), requiredReferences);
+        if (mandatoryChecks) {
+            for (var table : tables) {
+                var physical = catalog.get(table.object().symbol()).columns();
+                for (var column : table.columns()) {
+                    if (!(column.slot() instanceof AttributeSlot) || !mapping.mandatoryCheckReference(table, column)) continue;
+                    String path = column.slot().name().declared().toString();
+                    var name = attrNames.take(path, table.name(), null);
+                    if (name.target() != null || physical.containsKey(key(db, name.name()))) {
+                        throw new DbException("Invalid mandatory check ATTRNAME mapping for " + path);
+                    }
+                }
+            }
+        }
+        if (!attrNames.isEmpty()) throw new DbException("Extra ATTRNAME mappings for " + modelName);
         mapping.checkEnumLookupIds(settings.enumOptions());
         return mapping;
+    }
+
+    private static Map<String, Set<String>> mandatoryCheckColumns(Database db) throws SQLException {
+        String sql = """
+                SELECT t.relname, a.attname
+                FROM pg_catalog.pg_constraint c
+                JOIN pg_catalog.pg_class t ON t.oid=c.conrelid
+                JOIN pg_catalog.pg_namespace n ON n.oid=t.relnamespace
+                JOIN pg_catalog.pg_attribute a ON a.attrelid=t.oid AND c.conkey=ARRAY[a.attnum]
+                WHERE n.nspname=? AND c.contype='c'
+                  AND pg_catalog.pg_get_expr(c.conbin,c.conrelid) = '(' || pg_catalog.quote_ident(a.attname) || ' IS NOT NULL)'
+                """;
+        var result = new HashMap<String, Set<String>>();
+        try (var statement = db.connection().prepareStatement(sql)) {
+            statement.setString(1, db.schema());
+            try (var rows = statement.executeQuery()) {
+                while (rows.next()) {
+                    result.computeIfAbsent(rows.getString(1), ignored -> new HashSet<>()).add(rows.getString(2));
+                }
+            }
+        }
+        return result;
     }
 
     private static Set<String> smart1Subtypes(Database db, TransferPlan plan, CancellationToken token) throws SQLException {

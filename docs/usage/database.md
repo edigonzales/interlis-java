@@ -212,10 +212,15 @@ die Einstellung. Temporale Formate in SQL-Textspalten bleiben frei von
 diesen SQL-Prüfungen.
 
 `schemaimport --create-mandatory-checks` speichert die Einstellung für
-ili2db `--createMandatoryChecks`. Im Profil mit `SqlNull=enable` erzeugt
-die Referenz dazu keine zusätzlichen Pflichtprüfungen. Die aktive
-strikte Variante von ili2pg 5.5.2 belegt auch optionale Referenzen mit
-`IS NOT NULL` und liegt ausserhalb dieses Schemaerzeugungsprofils.
+ili2db `--createMandatoryChecks`. Im Profil mit `SqlNull=enable` bleibt
+die Prüfung inaktiv. Im strikten `newClass`-Profil ohne Typdiscriminator
+erzeugt PostGIS einen SQL-Check `IS NOT NULL` für nullable direkte lokale
+Referenzattribute und eingebettete Rollen mit einer Zielspalte. Das gilt
+wie bei ili2pg 5.5.2 auch für optionale Referenzen. Der Import belegt
+solche Spalten bei Vorwärtsreferenzen sofort mit einer reservierten
+Ziel-ID. GeoPackage speichert die Einstellung und lässt die Spalten
+nullable. Die zusätzlichen `ATTRNAME`-Einträge für Namen von Checks auf
+Referenzattributen bezeichnen keine physischen Spalten.
 
 `schemaimport --create-meta-info` schreibt die Modellmetadaten in
 `T_ILI2DB_META_ATTRS`. Dazu gehören deklarierte Meta-Attribute,
@@ -548,9 +553,9 @@ Bei der Aufteilung der Geometriespalten einer flachen Klasse gilt die
 Nullbarkeit auch auf der jeweiligen Hilfstabelle. Lokale Referenzattribute
 mit einer konkreten, vererbungsfreien Zielklasse bleiben auch bei `MANDATORY REFERENCE TO`
 nullable. XTF 2.3 überträgt diese Referenzattribute innerhalb einer Struktur.
-XTF 2.4 unterstützt zusätzlich direkte Klassenattribute. Ohne die Option
-gilt `SqlNull=enable`. Die Kombination mit `--create-mandatory-checks` ist
-auf das nullable Profil beschränkt.
+XTF 2.4 unterstützt zusätzlich direkte Klassenattribute. Ohne
+`--sql-not-null` gilt `SqlNull=enable`. Mit `--create-mandatory-checks`
+können unter PostGIS zusätzliche SQL-Pflichtprüfungen gelten.
 Geometrieabbildungen mit `--multi-srs` verwenden das Profil mit `SqlNull=enable`.
 
 Mit `--inheritance smart1 --sql-not-null` kann ein neues Schema mit direkt

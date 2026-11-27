@@ -151,6 +151,9 @@ public final class Main {
         if (!Ili2dbLayout.T_ID.equalsIgnoreCase(settings.rowIdColumn())) {
             throw new DbException("--add-models requires the standard T_Id primary key");
         }
+        if (!settings.sqlEnableNull() && settings.schemaOptions().contains(Ili2dbLayout.SchemaOption.MANDATORY_CHECKS)) {
+            throw DbMapping.unsupported("extending strict schemas with active mandatory checks");
+        }
         boolean smart = settings.inheritance() != DbInheritance.Profile.NEW_CLASS;
         if ((smart && !settings.sqlEnableNull()) || settings.defaultEpsg() == 0
                 || (options.explicitEpsg() && options.defaultEpsg() != settings.defaultEpsg())
@@ -416,9 +419,6 @@ public final class Main {
             boolean sqlNotNull = schemaFlags.contains("--sql-not-null");
             if (sqlNotNull && addModels) {
                 throw new IllegalArgumentException("--sql-not-null requires creation of a new schema");
-            }
-            if (sqlNotNull && schemaOptions.contains(Ili2dbLayout.SchemaOption.MANDATORY_CHECKS)) {
-                throw new IllegalArgumentException("--sql-not-null cannot be combined with --create-mandatory-checks");
             }
             if (!transformations.isEmpty() && (addModels || inheritance == DbInheritance.Profile.SMART1)) {
                 throw new IllegalArgumentException(transformations.iterator().next().option

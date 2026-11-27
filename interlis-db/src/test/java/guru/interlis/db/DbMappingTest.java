@@ -35,7 +35,7 @@ final class DbMappingTest {
             var options = new DbEnumOptions(true, false, false, DbEnumOptions.Lookup.NONE);
             var rejected = assertThrows(DbException.class, () -> DbMapping.planNew(plan, false, false, 2056, false,
                     Optional.empty(), new SqlNames(), DbInheritance.Profile.NEW_CLASS, Set.of(), false, options,
-                    Set.of(), token));
+                    Set.of(), false, token));
             assertTrue(rejected.getMessage().contains("extended attribute in inheritance at Readings.Data.SmartUnit.State"),
                     rejected::getMessage);
         }
@@ -67,7 +67,7 @@ final class DbMappingTest {
             var token = CancellationToken.none();
             var plan = DbModelSources.compile(List.of("Readings"), List.of(source), "test model", token).plan();
             var mapping = DbMapping.planNew(plan, false, false, 2056, false, Optional.empty(), new SqlNames(),
-                    DbInheritance.Profile.SMART2, Set.of(), false, DbEnumOptions.DEFAULT, Set.of(), token);
+                    DbInheritance.Profile.SMART2, Set.of(), false, DbEnumOptions.DEFAULT, Set.of(), false, token);
             var concrete = mapping.tables().stream().filter(table -> table.name().equals("specializedunit"))
                     .findFirst().orElseThrow();
             assertEquals(List.of("plug", "badge", "counter", "tilt", "label"),
