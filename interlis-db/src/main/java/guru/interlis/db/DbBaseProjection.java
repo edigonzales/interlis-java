@@ -2,10 +2,8 @@ package guru.interlis.db;
 
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.CollectionKind;
-import guru.interlis.model.CoordinateType;
 import guru.interlis.model.EnumerationType;
 import guru.interlis.model.EnumerationValue;
-import guru.interlis.model.GeometryType;
 import guru.interlis.model.OidRule;
 import guru.interlis.model.RoleAggregation;
 import guru.interlis.model.SymbolKind;
@@ -121,18 +119,7 @@ final class DbBaseProjection {
             var value = object.value(field.symbol());
             var type = plan.type(attribute.effectiveType()).known().orElseThrow();
             switch (type.kind()) {
-                case TEXT, BOOLEAN, NUMERIC, ENUMERATION, FORMATTED, OID, BLACKBOX -> { }
-                case COORDINATE -> {
-                    if (((CoordinateType) type).multiCoordinate()) {
-                        throw DbMapping.unsupported("base-model export of " + field.name().declared());
-                    }
-                }
-                case GEOMETRY -> {
-                    switch (((GeometryType) type).geometryKind()) {
-                        case POLYLINE, SURFACE, AREA -> { }
-                        default -> throw DbMapping.unsupported("base-model export of " + field.name().declared());
-                    }
-                }
+                case TEXT, BOOLEAN, NUMERIC, ENUMERATION, FORMATTED, OID, BLACKBOX, COORDINATE, GEOMETRY -> { }
                 case STRUCTURE_VALUE, COLLECTION -> {
                     var composition = mapping.compositionsForObject(target.symbol()).stream()
                             .filter(binding -> binding.slot().symbol().equals(field.symbol()))

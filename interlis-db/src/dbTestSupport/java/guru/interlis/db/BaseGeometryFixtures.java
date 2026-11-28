@@ -56,9 +56,10 @@ final class BaseGeometryFixtures {
         assertEquals(List.of(base), headerModels(data, version));
         assertEquals(1, children(data).size());
         var basket = basket(data, version, base + ".Data", "terrain-basket");
-        assertEquals(7, children(basket).size());
+        assertEquals(version == 24 ? 15 : 7, children(basket).size());
         assertTracks(basket, cleared);
         assertSurfaces(basket);
+        if (version == 24) assertCollections(basket);
     }
 
     private void assertTracks(Element basket, boolean cleared) {
@@ -97,6 +98,44 @@ final class BaseGeometryFixtures {
         shape(basket, "Parcel", "empty-parcel", "Boundary", false);
     }
 
+    private void assertCollections(Element basket) {
+        var survey = shape(basket, "Survey", "survey", "Locations", true);
+        members(survey, "multicoord", "coord");
+        geometry.assertOrdinates(survey, 1, "2603000.125", "2603010.125");
+        geometry.assertOrdinates(survey, 2, "1203000.375", "1203020.375");
+        geometry.assertOrdinates(survey, 3, "31", "32");
+        shape(basket, "Survey", "empty-survey", "Locations", false);
+
+        var network = shape(basket, "Network", "network", "Routes", true);
+        var lines = members(network, "multipolyline", "polyline");
+        geometry.assertOrdinates(lines.getFirst(), 1, "2604000.125", "2604020.125");
+        geometry.assertOrdinates(lines.getFirst(), 3, "41", "42");
+        geometry.assertOrdinates(lines.getLast(), 1, "2604100.125", "2604140.125");
+        geometry.assertOrdinates(lines.getLast(), 3, "43", "44");
+        assertArc(lines.getLast(), "2604120.125", "1204110.375");
+        shape(basket, "Network", "empty-network", "Routes", false);
+
+        var park = shape(basket, "Park", "park", "Grounds", true);
+        var plots = members(park, "multisurface", "surface");
+        geometry.assertOrdinates(plots.getFirst(), 3, "51", "52", "53", "54", "51");
+        geometry.assertOrdinates(plots.getLast(), 3, "55", "56", "57", "58", "55");
+        shape(basket, "Park", "empty-park", "Grounds", false);
+
+        var district = shape(basket, "District", "district", "Territory", true);
+        var parcels = members(district, "multisurface", "surface");
+        geometry.assertOrdinates(parcels.getFirst(), 3, "61", "62", "63", "64", "61");
+        geometry.assertOrdinates(parcels.getLast(), 3, "65", "66", "67", "68", "65");
+        shape(basket, "District", "empty-district", "Territory", false);
+    }
+
+    private static List<Element> members(Element field, String collectionName, String memberName) {
+        var collection = children(field).getFirst();
+        assertEquals(collectionName, collection.getLocalName());
+        var members = children(collection);
+        assertEquals(List.of(memberName, memberName), members.stream().map(Element::getLocalName).toList());
+        return members;
+    }
+
     private void assertArc(Element geometry, String x, String y) {
         var arcs = geometry.getElementsByTagNameNS("*", version == 23 ? "ARC" : "arc");
         assertEquals(1, arcs.getLength());
@@ -114,6 +153,16 @@ final class BaseGeometryFixtures {
             assertNullGeometry(db, sql, "plot", "outline", "empty-plot");
             assertStoredEpsg(db, sql, "parcel", "boundary", "parcel", 2056);
             assertNullGeometry(db, sql, "parcel", "boundary", "empty-parcel");
+            if (version == 24) {
+                assertStoredEpsg(db, sql, "survey", "locations", "survey", 2056);
+                assertNullGeometry(db, sql, "survey", "locations", "empty-survey");
+                assertStoredEpsg(db, sql, "network", "routes", "network", 2056);
+                assertNullGeometry(db, sql, "network", "routes", "empty-network");
+                assertStoredEpsg(db, sql, "park", "grounds", "park", 2056);
+                assertNullGeometry(db, sql, "park", "grounds", "empty-park");
+                assertStoredEpsg(db, sql, "district", "territory", "district", 2056);
+                assertNullGeometry(db, sql, "district", "territory", "empty-district");
+            }
         }
     }
 

@@ -434,7 +434,9 @@ Die Basketauswahl bezieht sich auf die gespeicherten Topics. Der Export
 behält BID und TID, übernimmt unveränderte skalare Basisattribute und
 geerbte Punkt-, Linien- und Flächengeometrien mit festem CRS. Linien und
 Flächen behalten ihre Koordinaten und Bögen. Bei `SURFACE` und `AREA`
-bleiben Aussen- und Innenringe erhalten. Geerbte Struktur-Einzelwerte und
+bleiben Aussen- und Innenringe erhalten. In XTF 2.4 werden auch
+`MULTICOORD`, `MULTIPOLYLINE`, `MULTISURFACE` und `MULTIAREA` mit allen
+Teilen übernommen. Geerbte Struktur-Einzelwerte und
 Listen mit unveränderten Strukturtypen des Basismodells behalten ihre
 Werte und Listenreihenfolge. Lokale, ungeordnete 1:n-Rollen ohne eigene
 Assoziationsattribute behalten den Zielverweis, wenn beide Endobjekte im

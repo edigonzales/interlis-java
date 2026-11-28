@@ -54,6 +54,64 @@
         </g:surface></b:Boundary>
       </RegionalParcel>
       <RegionalParcel i:tid="empty-parcel"/>
+      <RegionalSurvey i:tid="survey">
+        <b:Locations><g:multicoord>
+          <g:coord><g:c1>2603000.125</g:c1><g:c2>1203000.375</g:c2><g:c3>31</g:c3></g:coord>
+          <g:coord><g:c1>2603010.125</g:c1><g:c2>1203020.375</g:c2><g:c3>32</g:c3></g:coord>
+        </g:multicoord></b:Locations>
+      </RegionalSurvey>
+      <RegionalSurvey i:tid="empty-survey"/>
+      <RegionalNetwork i:tid="network">
+        <b:Routes><g:multipolyline>
+          <g:polyline>
+            <g:coord><g:c1>2604000.125</g:c1><g:c2>1204000.375</g:c2><g:c3>41</g:c3></g:coord>
+            <g:coord><g:c1>2604020.125</g:c1><g:c2>1204020.375</g:c2><g:c3>42</g:c3></g:coord>
+          </g:polyline>
+          <g:polyline>
+            <g:coord><g:c1>2604100.125</g:c1><g:c2>1204100.375</g:c2><g:c3>43</g:c3></g:coord>
+            <g:arc><g:c1>2604140.125</g:c1><g:c2>1204100.375</g:c2><g:c3>44</g:c3><g:a1>2604120.125</g:a1><g:a2>1204110.375</g:a2></g:arc>
+          </g:polyline>
+        </g:multipolyline></b:Routes>
+      </RegionalNetwork>
+      <RegionalNetwork i:tid="empty-network"/>
+      <RegionalPark i:tid="park">
+        <b:Grounds><g:multisurface>
+          <g:surface><g:exterior><g:polyline>
+            <g:coord><g:c1>2605000.125</g:c1><g:c2>1205000.375</g:c2><g:c3>51</g:c3></g:coord>
+            <g:coord><g:c1>2605040.125</g:c1><g:c2>1205000.375</g:c2><g:c3>52</g:c3></g:coord>
+            <g:coord><g:c1>2605040.125</g:c1><g:c2>1205040.375</g:c2><g:c3>53</g:c3></g:coord>
+            <g:coord><g:c1>2605000.125</g:c1><g:c2>1205040.375</g:c2><g:c3>54</g:c3></g:coord>
+            <g:coord><g:c1>2605000.125</g:c1><g:c2>1205000.375</g:c2><g:c3>51</g:c3></g:coord>
+          </g:polyline></g:exterior></g:surface>
+          <g:surface><g:exterior><g:polyline>
+            <g:coord><g:c1>2605100.125</g:c1><g:c2>1205100.375</g:c2><g:c3>55</g:c3></g:coord>
+            <g:coord><g:c1>2605140.125</g:c1><g:c2>1205100.375</g:c2><g:c3>56</g:c3></g:coord>
+            <g:coord><g:c1>2605140.125</g:c1><g:c2>1205140.375</g:c2><g:c3>57</g:c3></g:coord>
+            <g:coord><g:c1>2605100.125</g:c1><g:c2>1205140.375</g:c2><g:c3>58</g:c3></g:coord>
+            <g:coord><g:c1>2605100.125</g:c1><g:c2>1205100.375</g:c2><g:c3>55</g:c3></g:coord>
+          </g:polyline></g:exterior></g:surface>
+        </g:multisurface></b:Grounds>
+      </RegionalPark>
+      <RegionalPark i:tid="empty-park"/>
+      <RegionalDistrict i:tid="district">
+        <b:Territory><g:multisurface>
+          <g:surface><g:exterior><g:polyline>
+            <g:coord><g:c1>2606000.125</g:c1><g:c2>1206000.375</g:c2><g:c3>61</g:c3></g:coord>
+            <g:coord><g:c1>2606040.125</g:c1><g:c2>1206000.375</g:c2><g:c3>62</g:c3></g:coord>
+            <g:coord><g:c1>2606040.125</g:c1><g:c2>1206040.375</g:c2><g:c3>63</g:c3></g:coord>
+            <g:coord><g:c1>2606000.125</g:c1><g:c2>1206040.375</g:c2><g:c3>64</g:c3></g:coord>
+            <g:coord><g:c1>2606000.125</g:c1><g:c2>1206000.375</g:c2><g:c3>61</g:c3></g:coord>
+          </g:polyline></g:exterior></g:surface>
+          <g:surface><g:exterior><g:polyline>
+            <g:coord><g:c1>2606100.125</g:c1><g:c2>1206100.375</g:c2><g:c3>65</g:c3></g:coord>
+            <g:coord><g:c1>2606140.125</g:c1><g:c2>1206100.375</g:c2><g:c3>66</g:c3></g:coord>
+            <g:coord><g:c1>2606140.125</g:c1><g:c2>1206140.375</g:c2><g:c3>67</g:c3></g:coord>
+            <g:coord><g:c1>2606100.125</g:c1><g:c2>1206140.375</g:c2><g:c3>68</g:c3></g:coord>
+            <g:coord><g:c1>2606100.125</g:c1><g:c2>1206100.375</g:c2><g:c3>65</g:c3></g:coord>
+          </g:polyline></g:exterior></g:surface>
+        </g:multisurface></b:Territory>
+      </RegionalDistrict>
+      <RegionalDistrict i:tid="empty-district"/>
     </Region>
   </i:datasection>
 </i:transfer>

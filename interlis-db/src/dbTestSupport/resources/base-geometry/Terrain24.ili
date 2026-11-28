@@ -2,6 +2,7 @@ INTERLIS 2.4;
 MODEL Terrain24 (en) AT "https://example.org/interlis/db" VERSION "1" =
   DOMAIN
     Position = COORD 2460000.000 .. 2870000.000, 1045000.000 .. 1310000.000, -100.000 .. 1000.000;
+    Positions = MULTICOORD 2460000.000 .. 2870000.000, 1045000.000 .. 1310000.000, -100.000 .. 1000.000;
   TOPIC Data =
     CLASS Track =
       Trace : POLYLINE WITH (STRAIGHTS, ARCS) VERTEX Position;
@@ -12,5 +13,17 @@ MODEL Terrain24 (en) AT "https://example.org/interlis/db" VERSION "1" =
     CLASS Parcel =
       Boundary : AREA WITH (STRAIGHTS) VERTEX Position WITHOUT OVERLAPS > 0.001;
     END Parcel;
+    CLASS Survey =
+      Locations : Positions;
+    END Survey;
+    CLASS Network =
+      Routes : MULTIPOLYLINE WITH (STRAIGHTS, ARCS) VERTEX Position;
+    END Network;
+    CLASS Park =
+      Grounds : MULTISURFACE WITH (STRAIGHTS) VERTEX Position WITHOUT OVERLAPS > 0.001;
+    END Park;
+    CLASS District =
+      Territory : MULTIAREA WITH (STRAIGHTS) VERTEX Position WITHOUT OVERLAPS > 0.001;
+    END District;
   END Data;
 END Terrain24.

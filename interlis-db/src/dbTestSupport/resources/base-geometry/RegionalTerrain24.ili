@@ -7,5 +7,9 @@ MODEL RegionalTerrain24 (en) AT "https://example.org/interlis/db" VERSION "1" =
     END RegionalTrack;
     CLASS RegionalPlot EXTENDS Terrain24.Data.Plot = END RegionalPlot;
     CLASS RegionalParcel EXTENDS Terrain24.Data.Parcel = END RegionalParcel;
+    CLASS RegionalSurvey EXTENDS Terrain24.Data.Survey = END RegionalSurvey;
+    CLASS RegionalNetwork EXTENDS Terrain24.Data.Network = END RegionalNetwork;
+    CLASS RegionalPark EXTENDS Terrain24.Data.Park = END RegionalPark;
+    CLASS RegionalDistrict EXTENDS Terrain24.Data.District = END RegionalDistrict;
   END Region;
 END RegionalTerrain24.
