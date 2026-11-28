@@ -4,6 +4,8 @@ import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.index.strtree.STRtree;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import static guru.interlis.validation.jts.internal.CurveSegment.Point;
@@ -20,11 +22,16 @@ final class CurvePointLocation {
 
     private CurvePointLocation() {}
 
-    /** Prepares a ring for repeated exact point queries against its straight, exact edges. */
+    /** Prepares a ring with exact endpoints for repeated exact point queries. */
     static final class PreparedRing {
+        private static final Comparator<IndexedSegment> RING_ORDER = Comparator.comparingInt(IndexedSegment::offset);
+
         private final List<Segment> boundary;
         private boolean attempted;
+        private boolean hasArcs;
         private STRtree index;
+
+        private record IndexedSegment(int offset, Segment segment) {}
 
         PreparedRing(List<Segment> boundary) {
             this.boundary = boundary;
@@ -45,22 +52,37 @@ final class CurvePointLocation {
                 return CurvePointLocation.locate(boundary, point, visit);
             }
             visit.run();
-            // Monotone projection and inclusive, outward segment envelopes keep every possible hit.
-            // Exact straight predicates have no undetermined result, so candidate order is immaterial.
+            // A ray can meet only segments whose outward envelopes intersect it.
+            var ray = new Envelope(point.x(), Double.MAX_VALUE, point.y(), point.y());
+            if (!hasArcs) {
+                // Exact straight predicates cannot return an undetermined result.
+                @SuppressWarnings("unchecked")
+                List<Segment> candidates = index.query(ray);
+                return CurvePointLocation.locate(candidates, point, visit);
+            }
+
+            // Curved predicates can return UNDETERMINED before a later segment returns BOUNDARY.
             @SuppressWarnings("unchecked")
-            List<Segment> candidates = index.query(new Envelope(point.x(), Double.MAX_VALUE, point.y(), point.y()));
+            List<IndexedSegment> ordered = index.query(ray);
+            ordered.sort(RING_ORDER);
+            var candidates = new ArrayList<Segment>(ordered.size());
+            for (var candidate : ordered) {
+                candidates.add(candidate.segment());
+            }
             return CurvePointLocation.locate(candidates, point, visit);
         }
 
         private STRtree prepareIndex(Runnable visit) {
             for (var segment : boundary) {
                 visit.run();
-                if (!(segment.curve() instanceof CurveSegment.Straight line)
-                        || !line.start().isExact() || !line.end().isExact()) {
+                var curve = segment.curve();
+                if (!curve.start().isExact() || !curve.end().isExact()) {
                     return null;
                 }
+                hasArcs |= curve instanceof CircularArc;
             }
             var tree = new STRtree();
+            int offset = 0;
             for (var segment : boundary) {
                 visit.run();
                 var bounds = segment.curve().envelope();
@@ -68,7 +90,8 @@ final class CurvePointLocation {
                         || !Double.isFinite(bounds.getMinY()) || !Double.isFinite(bounds.getMaxY())) {
                     return null;
                 }
-                tree.insert(bounds, segment);
+                tree.insert(bounds, hasArcs ? new IndexedSegment(offset, segment) : segment);
+                offset++;
             }
             return tree;
         }

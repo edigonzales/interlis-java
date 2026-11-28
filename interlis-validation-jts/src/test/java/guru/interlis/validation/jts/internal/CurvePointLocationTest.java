@@ -7,7 +7,9 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static guru.interlis.validation.jts.internal.CurvePointLocation.Position.*;
 import static guru.interlis.validation.jts.internal.CurveSegment.Point;
@@ -29,6 +31,46 @@ class CurvePointLocationTest {
         }
         assertTrue(indexedVisits[0] < scannedVisits[0],
                 () -> "Indexed visits " + indexedVisits[0] + ", scanned visits " + scannedVisits[0]);
+    }
+
+    @Test
+    void indexesMixedRingsAndRetainsArcExtremaAndTangencies() {
+        var boundary = roundedRectangle("69");
+        var prepared = new CurvePointLocation.PreparedRing(boundary);
+        int[] scannedVisits = {0};
+        int[] indexedVisits = {0};
+
+        for (var point : List.of(point("5", "1.5"), point("5", "13.5"), point("5", "34.5"), point("5", "45.5"),
+                point("-1", "10.5"), point("11", "31.5"), point("5", "68"), point("5", "69"), point("-1", "69"),
+                point("5", "69.01"), point("10", "64"))) {
+            assertEquals(CurvePointLocation.locate(boundary, point, () -> scannedVisits[0]++),
+                    prepared.locate(point, () -> indexedVisits[0]++), () -> "Location at " + point);
+        }
+        assertTrue(indexedVisits[0] < scannedVisits[0],
+                () -> "Indexed visits " + indexedVisits[0] + ", scanned visits " + scannedVisits[0]);
+        assertEquals(INSIDE, prepared.locate(point("5", "68"), () -> {}));
+        assertEquals(BOUNDARY, prepared.locate(point("5", "69"), () -> {}));
+        assertEquals(OUTSIDE, prepared.locate(point("-1", "69"), () -> {}));
+        assertEquals(BOUNDARY, prepared.locate(point("10", "64"), () -> {}));
+
+        var nearTangent = Point.enclosed(Interval.exact(BigDecimal.valueOf(5), Interval.INITIAL_DIGITS),
+                new Interval(new BigDecimal("68.99"), new BigDecimal("69.01"), Interval.INITIAL_DIGITS));
+        assertEquals(UNDETERMINED, prepared.locate(nearTangent, () -> {}));
+    }
+
+    @Test
+    void retainsRingOrderWhenAnUnresolvedArcPrecedesABoundaryHit() {
+        var boundary = roundedRectangle("59");
+        // This ray intersects the inward semicircle arbitrarily close to tangency. Its origin is on the left side.
+        var nearTangent = Point.exact(BigDecimal.ZERO, BigDecimal.valueOf(59)
+                .add(BigDecimal.ONE.scaleByPowerOfTen(-Interval.MAX_DIGITS - 20)));
+        assertEquals(UNDETERMINED, CurvePointLocation.locate(boundary, nearTangent, () -> {}));
+        assertEquals(UNDETERMINED, new CurvePointLocation.PreparedRing(boundary).locate(nearTangent, () -> {}));
+
+        var leftSideFirst = new ArrayList<>(boundary);
+        Collections.rotate(leftSideFirst, -boundary.size() / 2 - 1);
+        assertEquals(BOUNDARY, CurvePointLocation.locate(leftSideFirst, nearTangent, () -> {}));
+        assertEquals(BOUNDARY, new CurvePointLocation.PreparedRing(leftSideFirst).locate(nearTangent, () -> {}));
     }
 
     @Test
@@ -60,6 +102,18 @@ class CurvePointLocationTest {
         var enclosed = Point.enclosed(new Interval(new BigDecimal("9.9"), new BigDecimal("10.1"), Interval.INITIAL_DIGITS),
                 new Interval(new BigDecimal("22.4"), new BigDecimal("22.6"), Interval.INITIAL_DIGITS));
         assertEquals(UNDETERMINED, prepared.locate(enclosed, () -> {}));
+    }
+
+    private static List<Segment> roundedRectangle(String topSupportY) {
+        var segments = new ArrayList<>(rectangle(BigDecimal.ZERO, BigDecimal.TEN, BigDecimal.ZERO, BigDecimal.ONE));
+        int upperEdgeIndex = segments.size() / 2;
+        var upperEdge = segments.get(upperEdgeIndex);
+        var start = upperEdge.curve().start();
+        var end = upperEdge.curve().end();
+        var arc = assertInstanceOf(CircularArc.Construction.Built.class,
+                CircularArc.build(start, point("5", topSupportY), end, Optional.empty(), 0)).arc();
+        segments.set(upperEdgeIndex, new Segment(arc, upperEdge.path(), upperEdge.edge()));
+        return List.copyOf(segments);
     }
 
     private static List<Segment> rectangle(BigDecimal minX, BigDecimal maxX, BigDecimal minY, BigDecimal step) {
