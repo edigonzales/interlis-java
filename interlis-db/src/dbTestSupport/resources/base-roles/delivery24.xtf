@@ -7,17 +7,25 @@
     <e:Work i:bid="work">
       <e:LocalSurvey i:tid="survey">
         <b:Memo>field work</b:Memo>
+        <b:Follows i:ref="course" i:order_pos="21"/>
         <b:Mark i:ref="mark"/>
         <e:Crew>morning team</e:Crew>
       </e:LocalSurvey>
-      <b:Survey i:tid="unassigned"><b:Memo>planned</b:Memo></b:Survey>
+      <b:Survey i:tid="unassigned"><b:Memo>planned</b:Memo><b:Follows i:ref="course"/></b:Survey>
       <b:FixedMarker i:tid="mark"/>
       <b:Document i:tid="detailed">
-        <b:FiledAt i:ref="archive"><b:Filing><b:Remark>registered</b:Remark><b:Priority>9</b:Priority></b:Filing></b:FiledAt>
+        <b:FiledAt i:ref="archive" i:order_pos="34"><b:Filing><b:Remark>registered</b:Remark><b:Priority>9</b:Priority></b:Filing></b:FiledAt>
       </b:Document>
-      <b:Document i:tid="direct"><b:FiledAt i:ref="archive"/></b:Document>
+      <b:Document i:tid="direct"><b:FiledAt i:ref="archive" i:order_pos="18"/></b:Document>
       <b:Document i:tid="unfiled"/>
       <b:MainArchive i:tid="archive"/>
+      <b:Observation>
+        <b:ObservedCourse i:ref="course" i:order_pos="3"/><b:ObservingSurvey i:ref="survey" i:order_pos="12"/>
+      </b:Observation>
+      <b:Observation>
+        <b:ObservedCourse i:ref="course"/><b:ObservingSurvey i:ref="unassigned" i:order_pos="2"/>
+      </b:Observation>
+      <b:Course i:tid="course"/>
     </e:Work>
   </i:datasection>
 </i:transfer>

@@ -14,9 +14,18 @@ MODEL RoleBase23 AT "https://example.org/interlis/db" VERSION "1" =
     CLASS Document = END Document;
     ASSOCIATION Filing =
       FiledAt -- {0..1} Archive;
-      FiledDocument -- {0..*} Document;
+      FiledDocument (ORDERED) -- {0..*} Document;
       Remark : TEXT*30;
       Priority : 0 .. 99;
     END Filing;
+    CLASS Course = END Course;
+    ASSOCIATION Route =
+      Follows -- {0..1} Course;
+      Stages (ORDERED) -- {0..*} Survey;
+    END Route;
+    ASSOCIATION Observation =
+      ObservedCourse (ORDERED) -- {0..*} Course;
+      ObservingSurvey (ORDERED) -- {0..*} Survey;
+    END Observation;
   END Data;
 END RoleBase23.

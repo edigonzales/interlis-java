@@ -43,12 +43,13 @@ final class BaseRoleInteropTest {
         importDataset(reference, legacy, "roles", fixture.delivery);
         var nativeOutput = work.resolve("native-base.xtf");
         assertCliSuccess(legacy, "export", fixture.extension, "roles", nativeOutput, "--export-model", fixture.base);
-        fixture.assertProjection(nativeOutput);
+        // ili2db 5.5.2 omits the positions on import and export.
+        fixture.assertProjection(nativeOutput, false);
 
         assertCliSuccess(own, "import", fixture.extension, "roles", fixture.delivery);
         var referenceOutput = work.resolve("reference-base.xtf");
         exportDataset(reference, own, "roles", referenceOutput, "--exportModels", fixture.base);
-        fixture.assertProjection(referenceOutput);
+        fixture.assertProjection(referenceOutput, false);
 
         var referenceTarget = legacy.peer("roles_base_reference");
         var nativeTarget = legacy.peer("roles_base_native");
@@ -58,5 +59,7 @@ final class BaseRoleInteropTest {
         assertCliSuccess(nativeTarget, "import", fixture.base, "base", referenceOutput);
         fixture.assertStoredRoles(referenceTarget);
         fixture.assertStoredRoles(nativeTarget);
+        fixture.assertStoredPositions(referenceTarget, false);
+        fixture.assertStoredPositions(nativeTarget, false);
     }
 }

@@ -445,13 +445,14 @@ in solchen Strukturen behalten den Verweis, wenn das Ziel im projizierten
 Basket liegt und dem deklarierten Zieltyp entspricht. Die Abbildung gilt
 für einen einzelnen Zieltyp ohne `RESTRICTION`.
 
-Lokale, ungeordnete 1:1- und 1:n-Rollen ohne eigene
-Assoziationsattribute behalten den Zielverweis, wenn beide Endobjekte
-im projizierten Basket liegen. Lokale, ungeordnete 1:n-Rollen erhalten auch
-skalare Assoziationsattribute, wenn die speichernde Klasse keine Untertypen
-hat. Lokale, ungeordnete anonyme n:m-Links des Basismodells behalten beide
-Zielverweise und ihre skalaren Attribute. Fehlt ein Ziel, bleibt die
-bestehende Exportdatei erhalten. Klassen ohne übertragbare Basisklasse
+Lokale 1:1- und 1:n-Rollen ohne eigene Assoziationsattribute behalten den
+Zielverweis, wenn beide Endobjekte im projizierten Basket liegen. Lokale
+1:n-Rollen erhalten auch skalare Assoziationsattribute, wenn die speichernde
+Klasse keine Untertypen hat. Lokale anonyme n:m-Links des Basismodells
+behalten beide Zielverweise und ihre skalaren Attribute. Der Export erhält
+gespeicherte `ORDERED`-Positionen in 1:n-Rollen und an n:m-Enden.
+ili2db 5.5.2 lässt Positionswerte im XTF-Austausch weg. Fehlt ein Ziel, bleibt
+die bestehende Exportdatei erhalten. Klassen ohne übertragbare Basisklasse
 entfallen.
 Die Zieldatei deklariert das Basismodell.
 Für jeden ausgewählten Basket muss unter denselben Identitätsregeln ein

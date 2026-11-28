@@ -7,17 +7,25 @@
     <RoleExtension23.Work BID="work">
       <RoleExtension23.Work.LocalSurvey TID="survey">
         <Memo>field work</Memo>
+        <Follows REF="course" ORDER_POS="21"/>
         <Mark REF="mark"/>
         <Crew>morning team</Crew>
       </RoleExtension23.Work.LocalSurvey>
-      <RoleBase23.Data.Survey TID="unassigned"><Memo>planned</Memo></RoleBase23.Data.Survey>
+      <RoleBase23.Data.Survey TID="unassigned"><Memo>planned</Memo><Follows REF="course"/></RoleBase23.Data.Survey>
       <RoleBase23.Data.FixedMarker TID="mark"/>
       <RoleBase23.Data.Document TID="detailed">
-        <FiledAt REF="archive"><RoleBase23.Data.Filing><Remark>registered</Remark><Priority>9</Priority></RoleBase23.Data.Filing></FiledAt>
+        <FiledAt REF="archive" ORDER_POS="34"><RoleBase23.Data.Filing><Remark>registered</Remark><Priority>9</Priority></RoleBase23.Data.Filing></FiledAt>
       </RoleBase23.Data.Document>
-      <RoleBase23.Data.Document TID="direct"><FiledAt REF="archive"/></RoleBase23.Data.Document>
+      <RoleBase23.Data.Document TID="direct"><FiledAt REF="archive" ORDER_POS="18"/></RoleBase23.Data.Document>
       <RoleBase23.Data.Document TID="unfiled"/>
       <RoleBase23.Data.MainArchive TID="archive"/>
+      <RoleBase23.Data.Observation>
+        <ObservedCourse REF="course" ORDER_POS="3"/><ObservingSurvey REF="survey" ORDER_POS="12"/>
+      </RoleBase23.Data.Observation>
+      <RoleBase23.Data.Observation>
+        <ObservedCourse REF="course"/><ObservingSurvey REF="unassigned" ORDER_POS="2"/>
+      </RoleBase23.Data.Observation>
+      <RoleBase23.Data.Course TID="course"/>
     </RoleExtension23.Work>
   </DATASECTION>
 </TRANSFER>

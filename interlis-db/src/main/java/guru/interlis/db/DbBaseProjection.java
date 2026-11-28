@@ -53,8 +53,7 @@ final class DbBaseProjection {
             if ((!association.linkTable() || !owner.single() && hasOnlyScalarAttributes(plan, association))
                     && target.single()
                     && owner.targets().size() == 1 && target.targets().size() == 1
-                    && !owner.external() && !target.external() && !association.ordered()
-                    && !association.role().role().ordered()
+                    && !owner.external() && !target.external()
                     && association.object().baseType().isEmpty()
                     && association.object().topic().filter(declared -> belongsTo(plan, declared, topic)).isPresent()) {
                 roles.put(association.role().symbol(), association);
@@ -69,7 +68,7 @@ final class DbBaseProjection {
             }
             var ends = DbMapping.describeRoles(plan, association);
             if (ends.size() == 2 && ends.stream().allMatch(end -> !end.single() && end.targets().size() == 1
-                    && !end.external() && !end.slot().role().ordered()
+                    && !end.external()
                     && end.slot().role().aggregation() == RoleAggregation.NONE)) {
                 links.put(association.symbol(), ends);
             }
