@@ -129,10 +129,11 @@ final class TopicInheritanceInteropTest {
         fixture.assertBaseDelivery(referenceOutput, "native-", true);
 
         var source = fixture.source(fixture.town);
+        var shared = fixture.source(fixture.shared);
         var referenceTarget = baseline.peer("base_reference");
         var nativeTarget = own.peer("base_native");
         schema(reference, referenceTarget, work, fixture.town, "newClass");
-        assertSchemaWithIdentityColumns(nativeTarget, fixture.town, source);
+        assertSchemaWithIdentityColumns(nativeTarget, fixture.town, source, "--model-file", shared.toString());
         importDataset(reference, referenceTarget, "projected", nativeOutput);
         assertCliSuccess(nativeTarget, "import", fixture.town, "projected", referenceOutput);
         assertProjectedRows(referenceTarget, fixture, "");
@@ -157,6 +158,10 @@ final class TopicInheritanceInteropTest {
                     "SELECT m.t_ili_tid || ':' || COALESCE(e.note, '<absent>') || ':' || COUNT(*) FROM "
                             + entries + " e JOIN " + db.table("marker")
                             + " m ON m.t_id=e.marker_observations AND m.t_basket=e.t_basket GROUP BY m.t_ili_tid, e.note"));
+            assertEquals(Set.of("0:water", "1:power"), catalogKeys(sql,
+                    "SELECT f.t_seq || ':' || f.aresult FROM " + db.table("finding")
+                            + " f JOIN " + db.table("inspection") + " i ON i.t_id=f.inspection_findings AND i.t_basket=f.t_basket"
+                            + " JOIN " + stations + " s ON s.t_id=i.station_inspection AND s.t_basket=i.t_basket"));
             assertEquals(prefix + "region-m", scalar(sql, "SELECT m.t_ili_tid FROM " + stations + " s JOIN "
                     + db.table("marker") + " m ON m.t_id=s.locatedat AND m.t_basket=s.t_basket"));
             assertEquals(prefix + "region-m:" + prefix + "region-s:planned", scalar(sql,

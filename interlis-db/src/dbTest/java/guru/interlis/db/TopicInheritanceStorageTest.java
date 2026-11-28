@@ -43,7 +43,7 @@ final class TopicInheritanceStorageTest {
         var fixture = new TopicInheritanceFixtures(work, version);
         var db = POSTGIS.target(work.resolve("sibling-class.gpkg"), backend);
         assertSchemaWithIdentityColumns(db, fixture.child, fixture.source(fixture.child),
-                "--model-file", fixture.source(fixture.town).toString());
+                "--model-file", fixture.source(fixture.town).toString(), "--model-file", fixture.source(fixture.shared).toString());
         assertCliSuccess(db, "import", fixture.child, "region", fixture.input("region"));
         var output = work.resolve("region-export.xtf");
         assertCliSuccess(db, "export", fixture.child, "region", output);
@@ -109,11 +109,13 @@ final class TopicInheritanceStorageTest {
         var db = POSTGIS.target(work.resolve("topic-mutation.gpkg"), backend);
         String incoming = "TownIncoming" + version;
         var parentSource = fixture.source(fixture.town);
+        var sharedSource = fixture.source(fixture.shared);
         var childSource = fixture.source(fixture.child);
         var incomingSource = fixture.source(incoming);
         assertSchemaWithIdentityColumns(db, fixture.child, childSource, "--model", incoming,
-                "--model-file", parentSource.toString(), "--model-file", incomingSource.toString());
-        for (var path : List.of(parentSource, childSource, incomingSource)) Files.delete(path);
+                "--model-file", parentSource.toString(), "--model-file", sharedSource.toString(),
+                "--model-file", incomingSource.toString());
+        for (var path : List.of(parentSource, sharedSource, childSource, incomingSource)) Files.delete(path);
 
         var input = fixture.input("region");
         var source = Files.readString(input);
@@ -232,7 +234,8 @@ final class TopicInheritanceStorageTest {
         String localMarker = "CLASS LocalMarker EXTENDS " + fixture.town + ".Core.Marker = END LocalMarker;";
         Files.writeString(child, Files.readString(child).replace("    CLASS LocalStation",
                 "    " + localMarker + "\n    CLASS LocalStation"));
-        assertSchemaWithIdentityColumns(db, fixture.child, child, "--model-file", parent.toString());
+        assertSchemaWithIdentityColumns(db, fixture.child, child, "--model-file", parent.toString(),
+                "--model-file", fixture.source(fixture.shared).toString());
 
         var input = fixture.input("region");
         String baseTag = version == 23 ? fixture.town + ".Core.Marker" : "b:Marker";

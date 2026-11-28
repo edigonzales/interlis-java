@@ -33,6 +33,7 @@ final class DbBaseProjection {
 
     private final DbMapping mapping;
     private final TopicDescriptor topic;
+    private final Set<SymbolRef> outputModels;
     private final Map<SymbolRef, DbMapping.EmbeddedAssociation> roles = new HashMap<>();
     private final Map<SymbolRef, List<DbMapping.AssociationRole>> links = new HashMap<>();
     private final Map<String, SymbolRef> projectedObjects = new HashMap<>();
@@ -42,6 +43,7 @@ final class DbBaseProjection {
     DbBaseProjection(DbMapping mapping, TopicDescriptor topic) {
         this.mapping = mapping;
         this.topic = topic;
+        outputModels = mapping.plan().modelImportClosure(Set.of(topic.model()));
         for (var association : mapping.associations()) {
             var owner = association.ownerRole();
             var target = association.targetRole();
@@ -122,10 +124,10 @@ final class DbBaseProjection {
                 case STRUCTURE_VALUE, COLLECTION -> {
                     var composition = mapping.compositionsForObject(target.symbol()).stream()
                             .filter(binding -> binding.slot().symbol().equals(field.symbol()))
-                            .filter(binding -> plan.object(binding.child()).orElseThrow().model().equals(topic.model()))
+                            .filter(binding -> outputModels.contains(plan.object(binding.child()).orElseThrow().model()))
                             .findFirst();
                     if (composition.isEmpty()) throw DbMapping.unsupported("base-model export of " + field.name().declared());
-                    value.ifPresent(structure -> checkStructure(plan, structure, topic.model(), attribute));
+                    value.ifPresent(structure -> checkStructure(plan, structure, outputModels, attribute));
                 }
                 default -> throw DbMapping.unsupported("base-model export of " + field.name().declared());
             }
@@ -202,18 +204,18 @@ final class DbBaseProjection {
         }
     }
 
-    private static void checkStructure(TransferPlan plan, TransferValue value, SymbolRef model, AttributeSlot field) {
+    private static void checkStructure(TransferPlan plan, TransferValue value, Set<SymbolRef> models, AttributeSlot field) {
         switch (value) {
             case Structured structure -> {
                 var type = plan.object(structure.type()).orElseThrow();
-                if (!type.model().equals(model)) {
+                if (!models.contains(type.model())) {
                     throw DbMapping.unsupported("base-model export of structure " + type.name().declared()
                             + " at " + field.name().declared());
                 }
-                structure.values().values().forEach(part -> checkStructure(plan, part, model, field));
+                structure.values().values().forEach(part -> checkStructure(plan, part, models, field));
             }
             case TransferValue.Repeated elements ->
-                    elements.values().forEach(part -> checkStructure(plan, part, model, field));
+                    elements.values().forEach(part -> checkStructure(plan, part, models, field));
             case TransferValue.Reference ignored ->
                     throw DbMapping.unsupported("base-model export of reference in " + field.name().declared());
             default -> { }

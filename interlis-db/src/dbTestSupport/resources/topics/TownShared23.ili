@@ -1,0 +1,7 @@
+INTERLIS 2.3;
+MODEL TownShared23 AT "https://example.org/town" VERSION "1" =
+  STRUCTURE Finding = Result : TEXT*30; END Finding;
+  STRUCTURE Inspection =
+    Findings : LIST {0..*} OF Finding;
+  END Inspection;
+END TownShared23.

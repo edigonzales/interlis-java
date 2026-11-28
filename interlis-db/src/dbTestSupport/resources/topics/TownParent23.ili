@@ -1,5 +1,6 @@
 INTERLIS 2.3;
 MODEL TownParent23 AT "https://example.org/town" VERSION "1" =
+IMPORTS TownShared23;
 TOPIC Core =
   STRUCTURE Entry = Note : TEXT*30; END Entry;
   CLASS Marker =
@@ -11,6 +12,7 @@ TOPIC Core =
     Memo : TEXT*30;
     Detail : Entry;
     History : LIST {0..*} OF Entry;
+    Inspection : TownShared23.Inspection;
     Center : COORD 2480000.000 .. 2840000.000, 1070000.000 .. 1300000.000;
   END Station;
   ASSOCIATION Location =

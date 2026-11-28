@@ -2,6 +2,7 @@
 <i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS"
             xmlns:a="http://www.interlis.ch/xtf/2.4/TownChild24"
             xmlns:b="http://www.interlis.ch/xtf/2.4/TownParent24"
+            xmlns:c="http://www.interlis.ch/xtf/2.4/TownShared24"
             xmlns:g="http://www.interlis.ch/geometry/1.0">
   <i:headersection><i:models><i:model>TownChild24</i:model></i:models></i:headersection>
   <i:datasection>
@@ -20,6 +21,10 @@
           <b:Entry><b:Note>alpha</b:Note></b:Entry>
           <b:Entry><b:Note>bravo</b:Note></b:Entry>
         </b:History>
+        <b:Inspection><c:Inspection><c:Findings>
+          <c:Finding><c:Result>water</c:Result></c:Finding>
+          <c:Finding><c:Result>power</c:Result></c:Finding>
+        </c:Findings></c:Inspection></b:Inspection>
         <b:Center><g:coord><g:c1>2600123.125</g:c1><g:c2>1200321.625</g:c2></g:coord></b:Center><b:LocatedAt i:ref="region-m"/><a:LocalMemo>child</a:LocalMemo></a:LocalStation>
     </a:Region>
   </i:datasection>

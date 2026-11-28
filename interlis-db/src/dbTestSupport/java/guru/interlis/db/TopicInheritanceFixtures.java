@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 final class TopicInheritanceFixtures {
     final String town;
+    final String shared;
     final String flat;
     final String child;
     final String abstractTown;
@@ -37,6 +38,7 @@ final class TopicInheritanceFixtures {
         this.work = work;
         this.version = version;
         town = "TownParent" + version;
+        shared = "TownShared" + version;
         flat = "TownFlat" + version;
         child = "TownChild" + version;
         abstractTown = "AbstractTown" + version;
@@ -55,7 +57,7 @@ final class TopicInheritanceFixtures {
     }
 
     List<Path> copySources() throws Exception {
-        return List.of(source(child), source(town), source(flat), source(refined), source(abstractTown),
+        return List.of(source(child), source(town), source(shared), source(flat), source(refined), source(abstractTown),
                 source(links), source(linksBase));
     }
 
@@ -118,11 +120,12 @@ final class TopicInheritanceFixtures {
         var region = basket(data, version, town + ".Core", prefix + "region-b");
         assertEquals(3, children(region).size());
         var station = object(region, town + ".Core.Station", prefix + "region-s");
-        assertEquals(Set.of("Memo", "Center", "Detail", "History", "LocatedAt"),
+        assertEquals(Set.of("Memo", "Center", "Detail", "History", "Inspection", "LocatedAt"),
                 children(station).stream().map(Element::getLocalName).collect(java.util.stream.Collectors.toSet()));
         assertField(station, town, "Memo", "base");
         assertCenter(station);
         assertEntries(station);
+        assertInspection(station);
         var marker = object(region, town + ".Core.Marker", prefix + "region-m");
         assertField(marker, town, "Memo", "inherited");
         assertNull(child(marker, "Detail"));
@@ -198,6 +201,19 @@ final class TopicInheritanceFixtures {
         history.forEach(entry -> assertName(entry, version, town + ".Core.Entry"));
         assertField(history.get(0), town, "Note", "alpha");
         assertField(history.get(1), town, "Note", "bravo");
+    }
+
+    private void assertInspection(Element station) {
+        var field = child(station, "Inspection");
+        if (version == 24) assertName(field, version, town + ".Inspection");
+        var inspection = children(field).getFirst();
+        assertName(inspection, version, shared + ".Inspection");
+        var findings = children(inspection).stream().filter(element -> "Findings".equals(element.getLocalName()))
+                .flatMap(element -> children(element).stream()).toList();
+        assertEquals(2, findings.size());
+        findings.forEach(finding -> assertName(finding, version, shared + ".Finding"));
+        assertField(findings.get(0), shared, "Result", "water");
+        assertField(findings.get(1), shared, "Result", "power");
     }
 
     private void assertObservations(Element marker) {
