@@ -445,9 +445,9 @@ in solchen Strukturen behalten den Verweis, wenn das Ziel im projizierten
 Basket liegt und dem deklarierten Zieltyp entspricht. Die Abbildung gilt
 für einen einzelnen Zieltyp ohne `RESTRICTION`.
 
-Lokale, ungeordnete 1:n-Rollen ohne eigene
-Assoziationsattribute behalten den Zielverweis, wenn beide Endobjekte im
-projizierten Basket liegen. Das gilt auch für lokale, ungeordnete anonyme
+Lokale, ungeordnete 1:1- und 1:n-Rollen ohne eigene
+Assoziationsattribute behalten den Zielverweis, wenn beide Endobjekte
+im projizierten Basket liegen. Das gilt auch für lokale, ungeordnete anonyme
 n:m-Links des Basismodells mit skalaren Attributen. Fehlt ein Ziel, bleibt
 die bestehende Exportdatei erhalten. Klassen ohne übertragbare Basisklasse entfallen.
 Die Zieldatei deklariert das Basismodell.

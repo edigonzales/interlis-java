@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="test"><MODELS>
+    <MODEL NAME="RoleExtension23" VERSION="1" URI="https://example.org/interlis/db"/>
+  </MODELS></HEADERSECTION>
+  <DATASECTION>
+    <RoleExtension23.Work BID="work">
+      <RoleExtension23.Work.LocalSurvey TID="survey">
+        <Memo>field work</Memo>
+        <Mark REF="mark"/>
+        <Crew>morning team</Crew>
+      </RoleExtension23.Work.LocalSurvey>
+      <RoleBase23.Data.Survey TID="unassigned"><Memo>planned</Memo></RoleBase23.Data.Survey>
+      <RoleBase23.Data.FixedMarker TID="mark"/>
+    </RoleExtension23.Work>
+  </DATASECTION>
+</TRANSFER>

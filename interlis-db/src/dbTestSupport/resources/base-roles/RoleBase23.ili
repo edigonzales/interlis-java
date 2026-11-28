@@ -1,0 +1,13 @@
+INTERLIS 2.3;
+
+MODEL RoleBase23 AT "https://example.org/interlis/db" VERSION "1" =
+  TOPIC Data =
+    CLASS Marker (ABSTRACT) = END Marker;
+    CLASS FixedMarker EXTENDS Marker = END FixedMarker;
+    CLASS Survey = Memo : TEXT*30; END Survey;
+    ASSOCIATION Assignment =
+      Mark -- {0..1} Marker;
+      AssignedSurvey -- {0..1} Survey;
+    END Assignment;
+  END Data;
+END RoleBase23.

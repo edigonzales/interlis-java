@@ -1,0 +1,9 @@
+INTERLIS 2.3;
+
+MODEL RoleExtension23 AT "https://example.org/interlis/db" VERSION "1" =
+  IMPORTS RoleBase23;
+  TOPIC Work EXTENDS RoleBase23.Data =
+    CLASS LocalSurvey EXTENDS RoleBase23.Data.Survey = Crew : TEXT*30; END LocalSurvey;
+    CLASS FieldMarker EXTENDS RoleBase23.Data.Marker = END FieldMarker;
+  END Work;
+END RoleExtension23.

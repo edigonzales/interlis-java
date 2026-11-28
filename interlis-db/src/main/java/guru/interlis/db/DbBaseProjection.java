@@ -49,7 +49,7 @@ final class DbBaseProjection {
         for (var association : mapping.associations()) {
             var owner = association.ownerRole();
             var target = association.targetRole();
-            if (!association.linkTable() && !owner.single() && target.single()
+            if (!association.linkTable() && target.single()
                     && owner.targets().size() == 1 && target.targets().size() == 1
                     && !owner.external() && !target.external() && !association.ordered()
                     && !association.role().role().ordered()

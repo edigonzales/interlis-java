@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS"
+            xmlns:e="http://www.interlis.ch/xtf/2.4/RoleExtension24"
+            xmlns:b="http://www.interlis.ch/xtf/2.4/RoleBase24">
+  <i:headersection><i:models><i:model>RoleExtension24</i:model></i:models></i:headersection>
+  <i:datasection>
+    <e:Work i:bid="work">
+      <e:LocalSurvey i:tid="survey">
+        <b:Memo>field work</b:Memo>
+        <b:Mark i:ref="mark"/>
+        <e:Crew>morning team</e:Crew>
+      </e:LocalSurvey>
+      <b:Survey i:tid="unassigned"><b:Memo>planned</b:Memo></b:Survey>
+      <b:FixedMarker i:tid="mark"/>
+    </e:Work>
+  </i:datasection>
+</i:transfer>
