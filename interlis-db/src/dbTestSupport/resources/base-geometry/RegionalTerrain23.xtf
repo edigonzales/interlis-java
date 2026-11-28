@@ -22,6 +22,37 @@
         </POLYLINE></Trace>
       </RegionalTerrain23.Region.RegionalTrack>
       <RegionalTerrain23.Region.RegionalTrack TID="absent"/>
+      <RegionalTerrain23.Region.RegionalPlot TID="plot">
+        <Outline><SURFACE>
+          <BOUNDARY><POLYLINE>
+            <COORD><C1>2601000.125</C1><C2>1201000.375</C2><C3>1</C3></COORD>
+            <ARC><C1>2601040.125</C1><C2>1201000.375</C2><C3>2</C3><A1>2601020.125</A1><A2>1200995.375</A2></ARC>
+            <COORD><C1>2601040.125</C1><C2>1201040.375</C2><C3>3</C3></COORD>
+            <COORD><C1>2601000.125</C1><C2>1201040.375</C2><C3>4</C3></COORD>
+            <COORD><C1>2601000.125</C1><C2>1201000.375</C2><C3>1</C3></COORD>
+          </POLYLINE></BOUNDARY>
+          <BOUNDARY><POLYLINE>
+            <COORD><C1>2601008.125</C1><C2>1201008.375</C2><C3>11</C3></COORD>
+            <COORD><C1>2601008.125</C1><C2>1201020.375</C2><C3>12</C3></COORD>
+            <COORD><C1>2601020.125</C1><C2>1201020.375</C2><C3>13</C3></COORD>
+            <COORD><C1>2601020.125</C1><C2>1201008.375</C2><C3>14</C3></COORD>
+            <COORD><C1>2601008.125</C1><C2>1201008.375</C2><C3>11</C3></COORD>
+          </POLYLINE></BOUNDARY>
+        </SURFACE></Outline>
+      </RegionalTerrain23.Region.RegionalPlot>
+      <RegionalTerrain23.Region.RegionalPlot TID="empty-plot"/>
+      <RegionalTerrain23.Region.RegionalParcel TID="parcel">
+        <Boundary><SURFACE>
+          <BOUNDARY><POLYLINE>
+            <COORD><C1>2602000.125</C1><C2>1202000.375</C2><C3>21</C3></COORD>
+            <COORD><C1>2602040.125</C1><C2>1202000.375</C2><C3>22</C3></COORD>
+            <COORD><C1>2602040.125</C1><C2>1202040.375</C2><C3>23</C3></COORD>
+            <COORD><C1>2602000.125</C1><C2>1202040.375</C2><C3>24</C3></COORD>
+            <COORD><C1>2602000.125</C1><C2>1202000.375</C2><C3>21</C3></COORD>
+          </POLYLINE></BOUNDARY>
+        </SURFACE></Boundary>
+      </RegionalTerrain23.Region.RegionalParcel>
+      <RegionalTerrain23.Region.RegionalParcel TID="empty-parcel"/>
     </RegionalTerrain23.Region>
   </DATASECTION>
 </TRANSFER>

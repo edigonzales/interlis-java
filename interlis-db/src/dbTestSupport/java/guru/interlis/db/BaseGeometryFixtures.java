@@ -5,6 +5,7 @@ import org.w3c.dom.Element;
 
 import java.math.BigDecimal;
 import java.nio.file.Path;
+import java.sql.Connection;
 import java.util.List;
 import java.util.Set;
 
@@ -20,6 +21,8 @@ import static guru.interlis.db.ModelFixtures.basket;
 import static guru.interlis.db.ModelFixtures.fixture;
 import static guru.interlis.db.ModelFixtures.headerModels;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 final class BaseGeometryFixtures {
     final String base;
@@ -53,40 +56,84 @@ final class BaseGeometryFixtures {
         assertEquals(List.of(base), headerModels(data, version));
         assertEquals(1, children(data).size());
         var basket = basket(data, version, base + ".Data", "terrain-basket");
-        assertEquals(3, children(basket).size());
-        var straight = track(basket, "straight", !cleared);
+        assertEquals(7, children(basket).size());
+        assertTracks(basket, cleared);
+        assertSurfaces(basket);
+    }
+
+    private void assertTracks(Element basket, boolean cleared) {
+        var straight = shape(basket, "Track", "straight", "Trace", !cleared);
         if (!cleared) {
             geometry.assertOrdinates(straight, 1, "2600100.125", "2600110.250");
             geometry.assertOrdinates(straight, 2, "1200100.375", "1200120.500");
             geometry.assertOrdinates(straight, 3, "20.125", "-11.250");
         }
-        var curved = track(basket, "curved", true);
+        var curved = shape(basket, "Track", "curved", "Trace", true);
         geometry.assertOrdinates(curved, 1, "2600200.125", "2600240.125");
         geometry.assertOrdinates(curved, 2, "1200200.375", "1200200.375");
         geometry.assertOrdinates(curved, 3, "2.125", "30.125");
-        var arcs = curved.getElementsByTagNameNS("*", version == 23 ? "ARC" : "arc");
+        assertArc(curved, "2600220.125", "1200210.375");
+        shape(basket, "Track", "absent", "Trace", false);
+    }
+
+    private void assertSurfaces(Element basket) {
+        var plot = shape(basket, "Plot", "plot", "Outline", true);
+        var rings = children(children(plot).getFirst());
+        assertEquals(2, rings.size());
+        assertEquals(version == 23 ? "BOUNDARY" : "exterior", rings.getFirst().getLocalName());
+        assertEquals(version == 23 ? "BOUNDARY" : "interior", rings.getLast().getLocalName());
+        geometry.assertOrdinates(rings.getFirst(), 1, "2601000.125", "2601040.125", "2601040.125", "2601000.125", "2601000.125");
+        geometry.assertOrdinates(rings.getFirst(), 3, "1", "2", "3", "4", "1");
+        geometry.assertOrdinates(rings.getLast(), 2, "1201008.375", "1201020.375", "1201020.375", "1201008.375", "1201008.375");
+        geometry.assertOrdinates(rings.getLast(), 3, "11", "12", "13", "14", "11");
+        assertArc(rings.getFirst(), "2601020.125", "1200995.375");
+        shape(basket, "Plot", "empty-plot", "Outline", false);
+
+        var parcel = shape(basket, "Parcel", "parcel", "Boundary", true);
+        assertEquals(1, children(children(parcel).getFirst()).size());
+        geometry.assertOrdinates(parcel, 1, "2602000.125", "2602040.125", "2602040.125", "2602000.125", "2602000.125");
+        geometry.assertOrdinates(parcel, 2, "1202000.375", "1202000.375", "1202040.375", "1202040.375", "1202000.375");
+        geometry.assertOrdinates(parcel, 3, "21", "22", "23", "24", "21");
+        shape(basket, "Parcel", "empty-parcel", "Boundary", false);
+    }
+
+    private void assertArc(Element geometry, String x, String y) {
+        var arcs = geometry.getElementsByTagNameNS("*", version == 23 ? "ARC" : "arc");
         assertEquals(1, arcs.getLength());
         var arc = (Element) arcs.item(0);
-        assertDecimal("2600220.125", child(arc, version == 23 ? "A1" : "a1"));
-        assertDecimal("1200210.375", child(arc, version == 23 ? "A2" : "a2"));
-        track(basket, "absent", false);
+        assertDecimal(x, child(arc, version == 23 ? "A1" : "a1"));
+        assertDecimal(y, child(arc, version == 23 ? "A2" : "a2"));
     }
 
     void assertStored(Target db) throws Exception {
         try (var sql = db.connect()) {
             assertStoredEpsg(db, sql, "track", "trace", "straight", 2056);
             assertStoredEpsg(db, sql, "track", "trace", "curved", 2056);
-            assertEquals(Set.of("absent"), catalogKeys(sql, "SELECT t_ili_tid FROM " + db.table("track") + " WHERE trace IS NULL"));
+            assertNullGeometry(db, sql, "track", "trace", "absent");
+            assertStoredEpsg(db, sql, "plot", "outline", "plot", 2056);
+            assertNullGeometry(db, sql, "plot", "outline", "empty-plot");
+            assertStoredEpsg(db, sql, "parcel", "boundary", "parcel", 2056);
+            assertNullGeometry(db, sql, "parcel", "boundary", "empty-parcel");
         }
     }
 
-    private Element track(Element basket, String tid, boolean present) {
+    private static void assertNullGeometry(Target db, Connection sql, String table, String field, String tid)
+            throws Exception {
+        assertEquals(Set.of(tid), catalogKeys(sql, "SELECT t_ili_tid FROM " + db.table(table) + " WHERE " + field + " IS NULL"));
+    }
+
+    private Element shape(Element basket, String type, String tid, String field, boolean present) {
         var object = geometry.object(basket, tid);
-        assertName(object, version, base + ".Data.Track");
+        assertName(object, version, base + ".Data." + type);
         assertEquals(present ? 1 : 0, children(object).size(), tid);
-        var trace = child(object, "Trace");
-        if (present && version == 24) assertName(trace, version, base + ".Trace");
-        return trace;
+        var value = child(object, field);
+        if (present) {
+            assertNotNull(value, tid + "." + field);
+            if (version == 24) assertName(value, version, base + "." + field);
+        } else {
+            assertNull(value);
+        }
+        return value;
     }
 
     private static void assertDecimal(String expected, Element ordinate) {

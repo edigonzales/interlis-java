@@ -23,6 +23,37 @@
         </g:polyline></b:Trace>
       </RegionalTrack>
       <RegionalTrack i:tid="absent"/>
+      <RegionalPlot i:tid="plot">
+        <b:Outline><g:surface>
+          <g:exterior><g:polyline>
+            <g:coord><g:c1>2601000.125</g:c1><g:c2>1201000.375</g:c2><g:c3>1</g:c3></g:coord>
+            <g:arc><g:c1>2601040.125</g:c1><g:c2>1201000.375</g:c2><g:c3>2</g:c3><g:a1>2601020.125</g:a1><g:a2>1200995.375</g:a2></g:arc>
+            <g:coord><g:c1>2601040.125</g:c1><g:c2>1201040.375</g:c2><g:c3>3</g:c3></g:coord>
+            <g:coord><g:c1>2601000.125</g:c1><g:c2>1201040.375</g:c2><g:c3>4</g:c3></g:coord>
+            <g:coord><g:c1>2601000.125</g:c1><g:c2>1201000.375</g:c2><g:c3>1</g:c3></g:coord>
+          </g:polyline></g:exterior>
+          <g:interior><g:polyline>
+            <g:coord><g:c1>2601008.125</g:c1><g:c2>1201008.375</g:c2><g:c3>11</g:c3></g:coord>
+            <g:coord><g:c1>2601008.125</g:c1><g:c2>1201020.375</g:c2><g:c3>12</g:c3></g:coord>
+            <g:coord><g:c1>2601020.125</g:c1><g:c2>1201020.375</g:c2><g:c3>13</g:c3></g:coord>
+            <g:coord><g:c1>2601020.125</g:c1><g:c2>1201008.375</g:c2><g:c3>14</g:c3></g:coord>
+            <g:coord><g:c1>2601008.125</g:c1><g:c2>1201008.375</g:c2><g:c3>11</g:c3></g:coord>
+          </g:polyline></g:interior>
+        </g:surface></b:Outline>
+      </RegionalPlot>
+      <RegionalPlot i:tid="empty-plot"/>
+      <RegionalParcel i:tid="parcel">
+        <b:Boundary><g:surface>
+          <g:exterior><g:polyline>
+            <g:coord><g:c1>2602000.125</g:c1><g:c2>1202000.375</g:c2><g:c3>21</g:c3></g:coord>
+            <g:coord><g:c1>2602040.125</g:c1><g:c2>1202000.375</g:c2><g:c3>22</g:c3></g:coord>
+            <g:coord><g:c1>2602040.125</g:c1><g:c2>1202040.375</g:c2><g:c3>23</g:c3></g:coord>
+            <g:coord><g:c1>2602000.125</g:c1><g:c2>1202040.375</g:c2><g:c3>24</g:c3></g:coord>
+            <g:coord><g:c1>2602000.125</g:c1><g:c2>1202000.375</g:c2><g:c3>21</g:c3></g:coord>
+          </g:polyline></g:exterior>
+        </g:surface></b:Boundary>
+      </RegionalParcel>
+      <RegionalParcel i:tid="empty-parcel"/>
     </Region>
   </i:datasection>
 </i:transfer>

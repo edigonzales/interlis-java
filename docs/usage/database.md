@@ -432,8 +432,9 @@ Mit `export --model Kanton --export-model Bund` lassen sich abgeleitete
 Topics in XTF 2.3 und 2.4 als konkrete Topics des Basismodells ausgeben.
 Die Basketauswahl bezieht sich auf die gespeicherten Topics. Der Export
 behält BID und TID, übernimmt unveränderte skalare Basisattribute und
-geerbte Punkt- und Liniengeometrien mit festem CRS. Geerbte Linien
-behalten ihre Koordinaten und Bögen. Geerbte Struktur-Einzelwerte und
+geerbte Punkt-, Linien- und Flächengeometrien mit festem CRS. Linien und
+Flächen behalten ihre Koordinaten und Bögen. Bei `SURFACE` und `AREA`
+bleiben Aussen- und Innenringe erhalten. Geerbte Struktur-Einzelwerte und
 Listen mit unveränderten Strukturtypen des Basismodells behalten ihre
 Werte und Listenreihenfolge. Lokale, ungeordnete 1:n-Rollen ohne eigene
 Assoziationsattribute behalten den Zielverweis, wenn beide Endobjekte im

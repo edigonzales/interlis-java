@@ -5,7 +5,6 @@ import guru.interlis.model.CollectionKind;
 import guru.interlis.model.CoordinateType;
 import guru.interlis.model.EnumerationType;
 import guru.interlis.model.EnumerationValue;
-import guru.interlis.model.GeometryKind;
 import guru.interlis.model.GeometryType;
 import guru.interlis.model.OidRule;
 import guru.interlis.model.RoleAggregation;
@@ -129,8 +128,9 @@ final class DbBaseProjection {
                     }
                 }
                 case GEOMETRY -> {
-                    if (((GeometryType) type).geometryKind() != GeometryKind.POLYLINE) {
-                        throw DbMapping.unsupported("base-model export of " + field.name().declared());
+                    switch (((GeometryType) type).geometryKind()) {
+                        case POLYLINE, SURFACE, AREA -> { }
+                        default -> throw DbMapping.unsupported("base-model export of " + field.name().declared());
                     }
                 }
                 case STRUCTURE_VALUE, COLLECTION -> {

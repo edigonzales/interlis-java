@@ -5,5 +5,7 @@ MODEL RegionalTerrain24 (en) AT "https://example.org/interlis/db" VERSION "1" =
     CLASS RegionalTrack EXTENDS Terrain24.Data.Track =
       Label : TEXT*16;
     END RegionalTrack;
+    CLASS RegionalPlot EXTENDS Terrain24.Data.Plot = END RegionalPlot;
+    CLASS RegionalParcel EXTENDS Terrain24.Data.Parcel = END RegionalParcel;
   END Region;
 END RegionalTerrain24.
