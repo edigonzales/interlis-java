@@ -41,6 +41,7 @@ public final class DatasetValidationSession implements AutoCloseable {
     private final Map<InputId, Long> inputs = new HashMap<>();
     private final LinkedHashSet<SymbolRef> primaryTopics;
     private final Set<SymbolRef> deliveredObjectTypes = new HashSet<>();
+    private final Set<SymbolRef> selectedObjectTypes = new HashSet<>();
     private boolean hasReferencesOrLinks;
     private boolean hasDeferredChecks;
     private boolean hasRequiredAssociations;
@@ -202,6 +203,9 @@ public final class DatasetValidationSession implements AutoCloseable {
                 boolean selected = plan.subjects().selects(descriptor.role(), context.basket);
                 var projection = checkHandles(object.data(), selected, cancellation);
                 deliveredObjectTypes.add(object.type());
+                if (selected) {
+                    selectedObjectTypes.add(object.type());
+                }
                 if (objects == options.limits().maxObjects()) {
                     throw new ValidationLimitException("Dataset object budget exceeded");
                 }
@@ -322,7 +326,7 @@ public final class DatasetValidationSession implements AutoCloseable {
             }
             new ViewExecutor(context).check(local);
             var coverage = new ArrayList<>(checkDatasetRules(context));
-            coverage.addAll(new GeometryScopeRunner(context).check(local));
+            coverage.addAll(new GeometryScopeRunner(context).check(local, selectedObjectTypes));
             cancellation.throwIfCancellationRequested();
             storage.checkpoint();
             var report = local.finishDataset(coverage, options.scope());

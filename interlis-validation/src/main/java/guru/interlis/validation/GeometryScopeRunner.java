@@ -4,6 +4,7 @@ import guru.interlis.model.AttributeSymbol;
 import guru.interlis.model.GeometryType;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolId;
+import guru.interlis.model.SymbolRef;
 import guru.interlis.transfer.TransferGeometry;
 import guru.interlis.transfer.TransferReader.XtfEncoding;
 import guru.interlis.transfer.TransferValue;
@@ -12,6 +13,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 final class GeometryScopeRunner {
     private final DatasetRuleContext dataset;
@@ -20,7 +22,7 @@ final class GeometryScopeRunner {
         this.dataset = dataset;
     }
 
-    List<DatasetRuleCoverage> check(ValidationSession report) {
+    List<DatasetRuleCoverage> check(ValidationSession report, Set<SymbolRef> selectedObjectTypes) {
         var rules = new LinkedHashMap<SymbolId, AttributeSymbol>();
         for (var object : dataset.plan.transferPlan().objects()) {
             dataset.visit();
@@ -43,9 +45,16 @@ final class GeometryScopeRunner {
             long[] violations = {0};
             boolean[] missing = {false};
             var engine = dataset.plan.bindings().geometry();
+            boolean scan = hasCandidates(attribute, selectedObjectTypes);
             var source = new GeometryEngine.Source() {
                 @Override public GeometryEngine.Cursor open() {
                     candidates[0] = 0;
+                    if (!scan) {
+                        return new GeometryEngine.Cursor() {
+                            @Override public Optional<GeometryEngine.Input> next() { return Optional.empty(); }
+                            @Override public void close() { }
+                        };
+                    }
                     return dataset.geometryCursor(occurrence -> {
                         var inputs = new ArrayList<GeometryEngine.Input>();
                         if (occurrence.selected() && occurrence.input().descriptor().role() == InputRole.PRIMARY) {
@@ -80,17 +89,30 @@ final class GeometryScopeRunner {
         return results;
     }
 
+    private boolean hasCandidates(AttributeSymbol attribute, Set<SymbolRef> selectedObjectTypes) {
+        // A structure's occurrences can be nested inside an unrelated delivered type.
+        if (structureAttribute(attribute)) {
+            return true;
+        }
+        for (var type : selectedObjectTypes) {
+            dataset.visit();
+            if (areaField(dataset.plan.object(type), attribute.id()) != null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void collect(AttributeSymbol declaration, DatasetRuleContext.Occurrence occurrence,
                          TransferValue.Structured owner, ValidationSession.ValuePath path,
                          boolean[] missing, List<GeometryEngine.Input> inputs) {
         dataset.visit();
         var object = dataset.plan.object(owner.type());
-        var target = object.field(declaration.id());
-        if (target != null && area(target.values().getFirst().type())) {
+        var target = areaField(object, declaration.id());
+        if (target != null) {
             select(occurrence, owner, path, target, missing).ifPresent(inputs::add);
         }
-        if (declaration.header().owner().flatMap(dataset.plan::symbol)
-                .filter(symbol -> symbol.kind() == SymbolKind.STRUCTURE).isEmpty()) {
+        if (!structureAttribute(declaration)) {
             return;
         }
         for (var entry : owner.values().entrySet()) {
@@ -98,6 +120,16 @@ final class GeometryScopeRunner {
             var slotPath = new ValidationSession.ValuePath(path, new DataLocation.Slot(entry.getKey()));
             collectValue(declaration, occurrence, entry.getValue(), slotPath, missing, inputs);
         }
+    }
+
+    private boolean structureAttribute(AttributeSymbol declaration) {
+        return declaration.header().owner().flatMap(dataset.plan::symbol)
+                .filter(symbol -> symbol.kind() == SymbolKind.STRUCTURE).isPresent();
+    }
+
+    private static ObjectValidationPlan.FieldRule areaField(ObjectValidationPlan object, SymbolId declaration) {
+        var field = object.field(declaration);
+        return field != null && area(field.values().getFirst().type()) ? field : null;
     }
 
     private void collectValue(AttributeSymbol declaration, DatasetRuleContext.Occurrence occurrence,
