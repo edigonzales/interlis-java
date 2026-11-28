@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="test"><MODELS>
+    <MODEL NAME="ExternalBase23" VERSION="1" URI="https://example.org/interlis/db"/>
+    <MODEL NAME="ExternalChild23" VERSION="1" URI="https://example.org/interlis/db"/>
+  </MODELS></HEADERSECTION>
+  <DATASECTION>
+    <ExternalBase23.Registry BID="catalog-b">
+      <ExternalBase23.Registry.RegisteredSite TID="catalog-site"><Label>railway station</Label></ExternalBase23.Registry.RegisteredSite>
+    </ExternalBase23.Registry>
+    <ExternalChild23.Region BID="region-full">
+      <ExternalChild23.Region.LocalReport TID="report-full">
+        <Note>first survey</Note><CatalogSite REF="catalog-site" BID="catalog-b"/><LocalNote>private</LocalNote>
+      </ExternalChild23.Region.LocalReport>
+    </ExternalChild23.Region>
+    <ExternalChild23.Region BID="region-partial">
+      <ExternalChild23.Region.LocalReport TID="report-partial">
+        <Note>second survey</Note><CatalogSite REF="catalog-site" BID="catalog-b"/><LocalNote>private</LocalNote>
+      </ExternalChild23.Region.LocalReport>
+    </ExternalChild23.Region>
+  </DATASECTION>
+</TRANSFER>

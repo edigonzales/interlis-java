@@ -1,0 +1,9 @@
+INTERLIS 2.3;
+MODEL ExternalChild23 AT "https://example.org/interlis/db" VERSION "1" =
+  IMPORTS ExternalBase23;
+  TOPIC Region EXTENDS ExternalBase23.Surveys =
+    CLASS LocalReport EXTENDS ExternalBase23.Surveys.FieldReport =
+      LocalNote : TEXT*30;
+    END LocalReport;
+  END Region;
+END ExternalChild23.

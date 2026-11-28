@@ -53,7 +53,7 @@ final class DbBaseProjection {
             if ((!association.linkTable() || !owner.single() && hasOnlyScalarAttributes(plan, association))
                     && target.single()
                     && owner.targets().size() == 1 && target.targets().size() == 1
-                    && !owner.external() && !target.external()
+                    && !owner.external() && (!target.external() || supportsExternalTarget(association))
                     && association.object().baseType().isEmpty()
                     && association.object().topic().filter(declared -> belongsTo(plan, declared, topic)).isPresent()) {
                 roles.put(association.role().symbol(), association);
@@ -73,7 +73,8 @@ final class DbBaseProjection {
                 links.put(association.symbol(), ends);
             }
         }
-        checksTargets = !roles.isEmpty() || !links.isEmpty() || mapping.tables().stream()
+        checksTargets = roles.values().stream().anyMatch(role -> !role.targetRole().external())
+                || !links.isEmpty() || mapping.tables().stream()
                 .filter(table -> table.object().kind() == SymbolKind.STRUCTURE && outputModels.contains(table.object().model()))
                 .flatMap(table -> table.columns().stream())
                 .anyMatch(column -> column.kind() == DbMapping.Kind.REFERENCE && !column.external());
@@ -86,6 +87,19 @@ final class DbBaseProjection {
                     case TEXT, BOOLEAN, NUMERIC, ENUMERATION, FORMATTED, OID, BLACKBOX -> true;
                     default -> false;
                 });
+    }
+
+    private boolean supportsExternalTarget(DbMapping.EmbeddedAssociation association) {
+        if (association.linkTable() || association.ownerRole().single() || association.ordered()
+                || !mapping.hasBasketColumn()) return false;
+        var target = mapping.plan().object(association.target()).orElseThrow();
+        return target.transferable() && target.topic()
+                .filter(declared -> !declared.equals(topic.symbol()))
+                .flatMap(mapping.plan()::topic)
+                .filter(declared -> declared.model().equals(topic.model()))
+                // Every stored target belongs to this base topic, so it needs no projection.
+                .filter(declared -> mapping.storedTopicNames(declared.symbol()).size() == 1)
+                .isPresent();
     }
 
     static TopicDescriptor topic(TransferPlan plan, TopicDescriptor source, List<SymbolRef> models) {
@@ -174,8 +188,10 @@ final class DbBaseProjection {
                     throw DbMapping.unsupported("base-model export of role " + field.header().name());
                 }
                 var reference = embeddedReference(association, entry.getValue());
-                references.add(new ProjectedReference(association.target(), association.role().name().declared().toString(),
-                        "object " + object.identity().tid().orElseThrow().value(), reference.target().value()));
+                if (!association.targetRole().external()) {
+                    references.add(new ProjectedReference(association.target(), association.role().name().declared().toString(),
+                            "object " + object.identity().tid().orElseThrow().value(), reference.target().value()));
+                }
                 values.put(entry.getKey(), entry.getValue());
             }
         }

@@ -454,6 +454,13 @@ gespeicherte `ORDERED`-Positionen in 1:n-Rollen und an n:m-Enden.
 ili2db 5.5.2 lässt Positionswerte im XTF-Austausch weg. Fehlt ein Ziel, bleibt
 die bestehende Exportdatei erhalten. Klassen ohne übertragbare Basisklasse
 entfallen.
+
+Eingebettete, ungeordnete `EXTERNAL`-Rollen ohne eigene Attribute können
+auf ein eindeutiges Ziel in einem unverändert übertragbaren Topic
+desselben Basismodells zeigen. Auch bei ausgelassenem Zielbasket behält
+der Export die Ziel-TID und in XTF 2.3 die Ziel-BID. ili2db 5.5.2 gibt
+in XTF 2.3 nur die Ziel-TID aus.
+
 Die Zieldatei deklariert das Basismodell.
 Für jeden ausgewählten Basket muss unter denselben Identitätsregeln ein
 konkretes Basistopic erreichbar sein.

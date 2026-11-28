@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS"
+            xmlns:b="http://www.interlis.ch/xtf/2.4/ExternalBase24"
+            xmlns:a="http://www.interlis.ch/xtf/2.4/ExternalChild24">
+  <i:headersection><i:models><i:model>ExternalBase24</i:model><i:model>ExternalChild24</i:model></i:models></i:headersection>
+  <i:datasection>
+    <b:Registry i:bid="catalog-b">
+      <b:RegisteredSite i:tid="catalog-site"><b:Label>railway station</b:Label></b:RegisteredSite>
+    </b:Registry>
+    <a:Region i:bid="region-full">
+      <a:LocalReport i:tid="report-full">
+        <b:Note>first survey</b:Note><b:CatalogSite i:ref="catalog-site"/><a:LocalNote>private</a:LocalNote>
+      </a:LocalReport>
+    </a:Region>
+    <a:Region i:bid="region-partial">
+      <a:LocalReport i:tid="report-partial">
+        <b:Note>second survey</b:Note><b:CatalogSite i:ref="catalog-site"/><a:LocalNote>private</a:LocalNote>
+      </a:LocalReport>
+    </a:Region>
+  </i:datasection>
+</i:transfer>

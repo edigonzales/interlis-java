@@ -1,0 +1,14 @@
+INTERLIS 2.4;
+MODEL ExternalBase24 AT "https://example.org/interlis/db" VERSION "1" =
+  TOPIC Registry =
+    CLASS RegisteredSite = Label : TEXT*30; END RegisteredSite;
+  END Registry;
+  TOPIC Surveys =
+    DEPENDS ON ExternalBase24.Registry;
+    CLASS FieldReport = Note : TEXT*30; END FieldReport;
+    ASSOCIATION CatalogAssignment =
+      Reports -- {0..*} FieldReport;
+      CatalogSite (EXTERNAL) -- {0..1} ExternalBase24.Registry.RegisteredSite;
+    END CatalogAssignment;
+  END Surveys;
+END ExternalBase24.
