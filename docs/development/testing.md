@@ -615,7 +615,8 @@ Datensätze bei Mutationen im NewClass-Layout. Der Basismodell-Export
 vergleicht `--export-model` mit ili2db `--exportModels`. Beide Werkzeuge
 importieren die Ausgabe des jeweils anderen in ein reines Basisschema.
 Der Mischlauf prüft Koordinaten und SRID eines geerbten Punkts sowie
-vorhandene und ausgelassene Struktur-Einzelwerte und die Listenreihenfolge.
+vorhandene und ausgelassene Struktur-Einzelwerte, die Listenreihenfolge
+sowie BAG-Duplikate, leere Strukturen und ein ausgelassenes BAG.
 Eine geerbte 1:n-Rolle und ein anonymer n:m-Link werden über ihre Zielverweise
 im XTF und die Fremdschlüssel im Ziel kontrolliert. Der eigene Test prüft
 die unveränderte Zieldatei bei doppeltem `T_Seq`, einem unerreichbaren Basistopic und einem

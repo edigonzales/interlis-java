@@ -436,9 +436,11 @@ geerbte Punkt-, Linien- und Flächengeometrien mit festem CRS. Linien und
 Flächen behalten ihre Koordinaten und Bögen. Bei `SURFACE` und `AREA`
 bleiben Aussen- und Innenringe erhalten. In XTF 2.4 werden auch
 `MULTICOORD`, `MULTIPOLYLINE`, `MULTISURFACE` und `MULTIAREA` mit allen
-Teilen übernommen. Geerbte Struktur-Einzelwerte und
-Listen mit unveränderten Strukturtypen des Basismodells behalten ihre
-Werte und Listenreihenfolge. Lokale, ungeordnete 1:n-Rollen ohne eigene
+Teilen übernommen.
+
+Geerbte Struktur-Einzelwerte, `LIST` und `BAG` mit unveränderten Strukturtypen
+des Basismodells behalten ihre Werte, einschliesslich der Listenreihenfolge
+und der BAG-Duplikate. Lokale, ungeordnete 1:n-Rollen ohne eigene
 Assoziationsattribute behalten den Zielverweis, wenn beide Endobjekte im
 projizierten Basket liegen. Das gilt auch für lokale, ungeordnete anonyme
 n:m-Links des Basismodells mit skalaren Attributen. Fehlt ein Ziel, bleibt

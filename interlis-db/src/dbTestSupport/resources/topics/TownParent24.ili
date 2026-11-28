@@ -2,7 +2,11 @@ INTERLIS 2.4;
 MODEL TownParent24 AT "https://example.org/town" VERSION "1" =
 TOPIC Core =
   STRUCTURE Entry = Note : TEXT*30; END Entry;
-  CLASS Marker = Memo : TEXT*30; Detail : Entry; END Marker;
+  CLASS Marker =
+    Memo : TEXT*30;
+    Detail : Entry;
+    Observations : BAG {0..*} OF Entry;
+  END Marker;
   CLASS Station =
     Memo : TEXT*30;
     Detail : Entry;

@@ -126,12 +126,15 @@ final class TopicInheritanceFixtures {
         var marker = object(region, town + ".Core.Marker", prefix + "region-m");
         assertField(marker, town, "Memo", "inherited");
         assertNull(child(marker, "Detail"));
+        assertObservations(marker);
         assertLocation(station, marker);
         assertVisit(region, prefix + "region", visitNote);
         if (includeFlat) {
             var flatBasket = basket(data, version, town + ".Core", prefix + "flat-b");
             assertEquals(1, children(flatBasket).size());
-            assertField(object(flatBasket, town + ".Core.Marker", prefix + "flat-m"), town, "Memo", "inherited");
+            var flatMarker = object(flatBasket, town + ".Core.Marker", prefix + "flat-m");
+            assertField(flatMarker, town, "Memo", "inherited");
+            assertNull(child(flatMarker, "Observations"));
         }
     }
 
@@ -195,6 +198,16 @@ final class TopicInheritanceFixtures {
         history.forEach(entry -> assertName(entry, version, town + ".Core.Entry"));
         assertField(history.get(0), town, "Note", "alpha");
         assertField(history.get(1), town, "Note", "bravo");
+    }
+
+    private void assertObservations(Element marker) {
+        var observations = children(marker).stream().filter(element -> "Observations".equals(element.getLocalName()))
+                .flatMap(element -> children(element).stream()).toList();
+        assertEquals(3, observations.size());
+        observations.forEach(entry -> assertName(entry, version, town + ".Core.Entry"));
+        assertEquals(1L, observations.stream().filter(entry -> children(entry).isEmpty()).count());
+        var samples = observations.stream().filter(entry -> !children(entry).isEmpty()).toList();
+        samples.forEach(entry -> assertField(entry, town, "Note", "sample"));
     }
 
     private void assertRefinement(Element basket, String prefix, String text) {

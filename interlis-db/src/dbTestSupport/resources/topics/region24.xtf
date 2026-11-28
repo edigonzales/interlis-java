@@ -6,7 +6,13 @@
   <i:headersection><i:models><i:model>TownChild24</i:model></i:models></i:headersection>
   <i:datasection>
     <a:Region i:bid="region-b">
-      <b:Marker i:tid="region-m"><b:Memo>inherited</b:Memo></b:Marker>
+      <b:Marker i:tid="region-m"><b:Memo>inherited</b:Memo>
+        <b:Observations>
+          <b:Entry><b:Note>sample</b:Note></b:Entry>
+          <b:Entry><b:Note>sample</b:Note></b:Entry>
+          <b:Entry/>
+        </b:Observations>
+      </b:Marker>
       <b:Visit><b:VisitedMarker i:ref="region-m"/><b:VisitingStation i:ref="region-s"/><b:VisitNote>planned</b:VisitNote></b:Visit>
       <a:LocalStation i:tid="region-s"><b:Memo>base</b:Memo>
         <b:Detail><b:Entry/></b:Detail>

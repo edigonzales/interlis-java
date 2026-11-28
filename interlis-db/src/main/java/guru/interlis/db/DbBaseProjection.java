@@ -1,7 +1,6 @@
 package guru.interlis.db;
 
 import guru.interlis.execution.CancellationToken;
-import guru.interlis.model.CollectionKind;
 import guru.interlis.model.EnumerationType;
 import guru.interlis.model.EnumerationValue;
 import guru.interlis.model.OidRule;
@@ -123,7 +122,6 @@ final class DbBaseProjection {
                 case STRUCTURE_VALUE, COLLECTION -> {
                     var composition = mapping.compositionsForObject(target.symbol()).stream()
                             .filter(binding -> binding.slot().symbol().equals(field.symbol()))
-                            .filter(binding -> binding.collectionKind().orElse(CollectionKind.LIST) == CollectionKind.LIST)
                             .filter(binding -> plan.object(binding.child()).orElseThrow().model().equals(topic.model()))
                             .findFirst();
                     if (composition.isEmpty()) throw DbMapping.unsupported("base-model export of " + field.name().declared());
