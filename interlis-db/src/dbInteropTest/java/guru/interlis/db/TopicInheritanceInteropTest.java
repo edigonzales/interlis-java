@@ -158,6 +158,11 @@ final class TopicInheritanceInteropTest {
                     "SELECT m.t_ili_tid || ':' || COALESCE(e.note, '<absent>') || ':' || COUNT(*) FROM "
                             + entries + " e JOIN " + db.table("marker")
                             + " m ON m.t_id=e.marker_observations AND m.t_basket=e.t_basket GROUP BY m.t_ili_tid, e.note"));
+            assertEquals(Set.of(prefix + "region-m:nearby:" + prefix + "region-s", prefix + "region-m:unknown:<absent>"),
+                    catalogKeys(sql, "SELECT m.t_ili_tid || ':' || l.caption || ':' || COALESCE(s.t_ili_tid, '<absent>') FROM "
+                            + db.table("stationlink") + " l JOIN " + db.table("marker")
+                            + " m ON m.t_id=l.marker_linknotes AND m.t_basket=l.t_basket LEFT JOIN "
+                            + stations + " s ON s.t_id=l.relatedstation AND s.t_basket=l.t_basket"));
             assertEquals(Set.of("0:water", "1:power"), catalogKeys(sql,
                     "SELECT f.t_seq || ':' || f.aresult FROM " + db.table("finding")
                             + " f JOIN " + db.table("inspection") + " i ON i.t_id=f.inspection_findings AND i.t_basket=f.t_basket"

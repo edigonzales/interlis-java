@@ -130,6 +130,7 @@ final class TopicInheritanceFixtures {
         assertField(marker, town, "Memo", "inherited");
         assertNull(child(marker, "Detail"));
         assertObservations(marker);
+        assertLinkNotes(marker, prefix + "region-s");
         assertLocation(station, marker);
         assertVisit(region, prefix + "region", visitNote);
         if (includeFlat) {
@@ -224,6 +225,19 @@ final class TopicInheritanceFixtures {
         assertEquals(1L, observations.stream().filter(entry -> children(entry).isEmpty()).count());
         var samples = observations.stream().filter(entry -> !children(entry).isEmpty()).toList();
         samples.forEach(entry -> assertField(entry, town, "Note", "sample"));
+    }
+
+    private void assertLinkNotes(Element marker, String targetTid) {
+        var links = children(marker).stream().filter(element -> "LinkNotes".equals(element.getLocalName()))
+                .flatMap(element -> children(element).stream()).toList();
+        assertEquals(2, links.size());
+        links.forEach(link -> assertName(link, version, town + ".Core.StationLink"));
+        assertField(links.getFirst(), town, "Caption", "nearby");
+        var target = child(links.getFirst(), "RelatedStation");
+        if (version == 24) assertName(target, version, town + ".RelatedStation");
+        assertEquals(targetTid, id(target, version, "ref"));
+        assertField(links.getLast(), town, "Caption", "unknown");
+        assertNull(child(links.getLast(), "RelatedStation"));
     }
 
     private void assertRefinement(Element basket, String prefix, String text) {

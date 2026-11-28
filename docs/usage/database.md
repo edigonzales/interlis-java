@@ -440,7 +440,12 @@ Teilen übernommen.
 
 Geerbte Struktur-Einzelwerte, `LIST` und `BAG` mit unveränderten Strukturtypen
 des Basismodells und seiner Modellimporte behalten ihre Werte, einschliesslich
-der Listenreihenfolge und der BAG-Duplikate. Lokale, ungeordnete 1:n-Rollen ohne eigene
+der Listenreihenfolge und der BAG-Duplikate. Lokale `REFERENCE TO`-Attribute
+in solchen Strukturen behalten den Verweis, wenn das Ziel im projizierten
+Basket liegt und dem deklarierten Zieltyp entspricht. Die Abbildung gilt
+für einen einzelnen Zieltyp ohne `RESTRICTION`.
+
+Lokale, ungeordnete 1:n-Rollen ohne eigene
 Assoziationsattribute behalten den Zielverweis, wenn beide Endobjekte im
 projizierten Basket liegen. Das gilt auch für lokale, ungeordnete anonyme
 n:m-Links des Basismodells mit skalaren Attributen. Fehlt ein Ziel, bleibt

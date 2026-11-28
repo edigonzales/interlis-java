@@ -18,7 +18,11 @@ import java.util.regex.Pattern;
 import static guru.interlis.db.DbTestSupport.assertCliFailure;
 import static guru.interlis.db.DbTestSupport.assertCliSuccess;
 import static guru.interlis.db.DbTestSupport.assertSchemaWithIdentityColumns;
+import static guru.interlis.db.DbTestSupport.child;
+import static guru.interlis.db.DbTestSupport.children;
 import static guru.interlis.db.DbTestSupport.execute;
+import static guru.interlis.db.DbTestSupport.id;
+import static guru.interlis.db.DbTestSupport.readDataSection;
 import static guru.interlis.db.DbTestSupport.scalar;
 import static guru.interlis.db.ModelFixtures.mergeDeliveries;
 import static guru.interlis.db.ModelFixtures.tableFor;
@@ -123,9 +127,11 @@ final class TopicInheritanceStorageTest {
         var updated = fixture.updateRegion(input);
         String stationTag = Pattern.quote(version == 23 ? fixture.child + ".Region.LocalStation" : "a:LocalStation");
         String visitTag = Pattern.quote(version == 23 ? fixture.town + ".Core.Visit" : "b:Visit");
+        String linksTag = version == 23 ? "LinkNotes" : "b:LinkNotes";
         var removed = Files.writeString(work.resolve("removed-target.xtf"),
                 source.replaceFirst("(?s)<" + stationTag + " .*?</" + stationTag + ">", "")
                         .replaceFirst("(?s)<" + visitTag + ">.*?</" + visitTag + ">", "")
+                        .replaceFirst("(?s)<" + linksTag + ">.*?</" + linksTag + ">", "")
                         .replace(">inherited<", ">must roll back<"));
         assertCliSuccess(db, "import", fixture.child, "inherited", input);
         assertCliSuccess(db, "import", incoming, "incoming", fixture.input("incoming"));
@@ -219,6 +225,74 @@ final class TopicInheritanceStorageTest {
         }
         assertCliSuccess(db, "export", fixture.child, null, output, "--basket", "region-b", "--export-model", fixture.town);
         fixture.assertBaseDelivery(output, "", false, null);
+    }
+
+    @ParameterizedTest(name = "{displayName} [XTF {0}, {1}]")
+    @CsvSource({"23, GEOPACKAGE", "24, GEOPACKAGE", "23, POSTGIS", "24, POSTGIS"})
+    void resolvesStructureReferencesAgainstProjectedObjects(int version, Backend backend) throws Exception {
+        var db = POSTGIS.target(work.resolve("base-structure-reference.gpkg"), backend);
+        String parent = "StructureLinkBase" + version;
+        String derived = "StructureLinkChild" + version;
+        var source = Files.writeString(work.resolve(parent + ".ili"), """
+                INTERLIS 2.%d;
+                MODEL %s AT "https://example.org/town" VERSION "1" =
+                  TOPIC Core =
+                    CLASS Landmark (ABSTRACT) = END Landmark;
+                    CLASS PublicLandmark EXTENDS Landmark = END PublicLandmark;
+                    STRUCTURE Hint = LeadTo : REFERENCE TO Landmark; END Hint;
+                    CLASS Site = Direction : Hint; END Site;
+                  END Core;
+                END %s.
+                MODEL %s AT "https://example.org/town" VERSION "1" =
+                  IMPORTS %s;
+                  TOPIC Region EXTENDS %s.Core =
+                    CLASS LocalLandmark EXTENDS %s.Core.Landmark = END LocalLandmark;
+                  END Region;
+                END %s.
+                """.formatted(version % 10, parent, parent, derived, parent, parent, parent, derived));
+        assertSchemaWithIdentityColumns(db, derived, source);
+
+        String input = version == 23 ? """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+                  <HEADERSECTION VERSION="2.3" SENDER="test"><MODELS>
+                    <MODEL NAME="%2$s" VERSION="1" URI="https://example.org/town"/>
+                  </MODELS></HEADERSECTION>
+                  <DATASECTION><%2$s.Region BID="region">
+                    <%1$s.Core.Site TID="site"><Direction><%1$s.Core.Hint><LeadTo REF="landmark"/>
+                    </%1$s.Core.Hint></Direction></%1$s.Core.Site>
+                    <%1$s.Core.PublicLandmark TID="landmark"/>
+                  </%2$s.Region></DATASECTION>
+                </TRANSFER>
+                """.formatted(parent, derived) : """
+                <i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS"
+                  xmlns:p="http://www.interlis.ch/xtf/2.4/%1$s" xmlns:c="http://www.interlis.ch/xtf/2.4/%2$s">
+                  <i:headersection><i:models><i:model>%2$s</i:model></i:models></i:headersection>
+                  <i:datasection><c:Region i:bid="region">
+                    <p:Site i:tid="site"><p:Direction><p:Hint><p:LeadTo i:ref="landmark"/>
+                    </p:Hint></p:Direction></p:Site>
+                    <p:PublicLandmark i:tid="landmark"/>
+                  </c:Region></i:datasection>
+                </i:transfer>
+                """.formatted(parent, derived);
+        var valid = Files.writeString(work.resolve("valid.xtf"), input);
+        var output = work.resolve("base.xtf");
+        assertCliSuccess(db, "import", derived, "source", valid);
+        assertCliSuccess(db, "export", derived, "source", output, "--export-model", parent);
+        var basket = children(readDataSection(output, version)).getFirst();
+        var site = child(basket, version == 23 ? parent + ".Core.Site" : "Site");
+        var hint = children(child(site, "Direction")).getFirst();
+        assertEquals("landmark", id(child(hint, "LeadTo"), version, "ref"));
+        var published = Files.readAllBytes(output);
+
+        String projectedTarget = version == 23 ? parent + ".Core.PublicLandmark" : "p:PublicLandmark";
+        String droppedTarget = version == 23 ? derived + ".Region.LocalLandmark" : "c:LocalLandmark";
+        var unprojectable = Files.writeString(work.resolve("unprojectable.xtf"), input.replace(projectedTarget, droppedTarget));
+        assertCliSuccess(db, "replace", derived, "source", unprojectable);
+        assertCliFailure(db, "export", derived, "source", output,
+                "Missing projected target landmark at " + parent + ".Core.Site.Direction.LeadTo of object site in basket region",
+                "--export-model", parent);
+        assertArrayEquals(published, Files.readAllBytes(output));
     }
 
     @ParameterizedTest(name = "{displayName} [XTF {0}, {1}]")

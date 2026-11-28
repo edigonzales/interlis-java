@@ -13,6 +13,10 @@
           <b:Entry><b:Note>sample</b:Note></b:Entry>
           <b:Entry/>
         </b:Observations>
+        <b:LinkNotes>
+          <b:StationLink><b:Caption>nearby</b:Caption><b:RelatedStation i:ref="region-s"/></b:StationLink>
+          <b:StationLink><b:Caption>unknown</b:Caption></b:StationLink>
+        </b:LinkNotes>
       </b:Marker>
       <b:Visit><b:VisitedMarker i:ref="region-m"/><b:VisitingStation i:ref="region-s"/><b:VisitNote>planned</b:VisitNote></b:Visit>
       <a:LocalStation i:tid="region-s"><b:Memo>base</b:Memo>

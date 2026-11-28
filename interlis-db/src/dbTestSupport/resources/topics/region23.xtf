@@ -11,6 +11,10 @@
           <TownParent23.Core.Entry><Note>sample</Note></TownParent23.Core.Entry>
           <TownParent23.Core.Entry/>
         </Observations>
+        <LinkNotes>
+          <TownParent23.Core.StationLink><Caption>nearby</Caption><RelatedStation REF="region-s"/></TownParent23.Core.StationLink>
+          <TownParent23.Core.StationLink><Caption>unknown</Caption></TownParent23.Core.StationLink>
+        </LinkNotes>
       </TownParent23.Core.Marker>
       <TownParent23.Core.Visit><VisitedMarker REF="region-m"/><VisitingStation REF="region-s"/><VisitNote>planned</VisitNote></TownParent23.Core.Visit>
       <TownChild23.Region.LocalStation TID="region-s"><Memo>base</Memo>

@@ -3,11 +3,6 @@ MODEL TownParent24 AT "https://example.org/town" VERSION "1" =
 IMPORTS TownShared24;
 TOPIC Core =
   STRUCTURE Entry = Note : TEXT*30; END Entry;
-  CLASS Marker =
-    Memo : TEXT*30;
-    Detail : Entry;
-    Observations : BAG {0..*} OF Entry;
-  END Marker;
   CLASS Station =
     Memo : TEXT*30;
     Detail : Entry;
@@ -15,6 +10,16 @@ TOPIC Core =
     Inspection : TownShared24.Inspection;
     Center : COORD 2480000.000 .. 2840000.000, 1070000.000 .. 1300000.000;
   END Station;
+  STRUCTURE StationLink =
+    Caption : TEXT*30;
+    RelatedStation : REFERENCE TO Station;
+  END StationLink;
+  CLASS Marker =
+    Memo : TEXT*30;
+    Detail : Entry;
+    Observations : BAG {0..*} OF Entry;
+    LinkNotes : LIST {0..*} OF StationLink;
+  END Marker;
   ASSOCIATION Location =
     LocatedAt -- {0..1} Marker;
     LocatedStation -- {0..*} Station;

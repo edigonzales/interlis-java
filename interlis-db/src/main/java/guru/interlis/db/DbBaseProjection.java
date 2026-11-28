@@ -4,6 +4,7 @@ import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.EnumerationType;
 import guru.interlis.model.EnumerationValue;
 import guru.interlis.model.OidRule;
+import guru.interlis.model.ReferenceType;
 import guru.interlis.model.RoleAggregation;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
@@ -29,15 +30,16 @@ import java.util.stream.Collectors;
 
 /** Projects decoded export events through the model's checked inheritance. */
 final class DbBaseProjection {
-    private record ProjectedRole(SymbolRef targetType, String role, String source, String targetTid) { }
+    private record ProjectedReference(SymbolRef targetType, String field, String source, String targetTid) { }
 
     private final DbMapping mapping;
     private final TopicDescriptor topic;
     private final Set<SymbolRef> outputModels;
+    private final boolean checksTargets;
     private final Map<SymbolRef, DbMapping.EmbeddedAssociation> roles = new HashMap<>();
     private final Map<SymbolRef, List<DbMapping.AssociationRole>> links = new HashMap<>();
     private final Map<String, SymbolRef> projectedObjects = new HashMap<>();
-    private final List<ProjectedRole> references = new ArrayList<>();
+    private final List<ProjectedReference> references = new ArrayList<>();
     private final Map<TypeId, Set<String>> enumLeaves = new HashMap<>();
 
     DbBaseProjection(DbMapping mapping, TopicDescriptor topic) {
@@ -71,6 +73,10 @@ final class DbBaseProjection {
                 links.put(association.symbol(), ends);
             }
         }
+        checksTargets = !roles.isEmpty() || !links.isEmpty() || mapping.tables().stream()
+                .filter(table -> table.object().kind() == SymbolKind.STRUCTURE && outputModels.contains(table.object().model()))
+                .flatMap(table -> table.columns().stream())
+                .anyMatch(column -> column.kind() == DbMapping.Kind.REFERENCE && !column.external());
     }
 
     static TopicDescriptor topic(TransferPlan plan, TopicDescriptor source, List<SymbolRef> models) {
@@ -127,7 +133,7 @@ final class DbBaseProjection {
                             .filter(binding -> outputModels.contains(plan.object(binding.child()).orElseThrow().model()))
                             .findFirst();
                     if (composition.isEmpty()) throw DbMapping.unsupported("base-model export of " + field.name().declared());
-                    value.ifPresent(structure -> checkStructure(plan, structure, outputModels, attribute));
+                    value.ifPresent(structure -> checkStructure(structure, attribute, attribute.name().declared().toString(), object));
                 }
                 default -> throw DbMapping.unsupported("base-model export of " + field.name().declared());
             }
@@ -139,14 +145,15 @@ final class DbBaseProjection {
                 if (!(object.value(role.symbol()).orElse(null) instanceof Reference reference)) {
                     throw DbMapping.unsupported("base-model export of link role " + role.name().declared());
                 }
-                references.add(new ProjectedRole(end.target(), role.name().declared().toString(),
+                references.add(new ProjectedReference(end.target(), role.name().declared().toString(),
                         "link " + target.name().declared(), reference.target().value()));
                 values.put(role.symbol(), reference);
             }
             return Optional.of(new TransferObject(object.identity(), new Structured(target.symbol(), values)));
         }
-        if (!roles.isEmpty() || !links.isEmpty()) {
-            projectedObjects.put(object.identity().tid().orElseThrow().value(), target.symbol());
+        if (checksTargets) {
+            var targetType = target.symbol();
+            object.identity().tid().ifPresent(tid -> projectedObjects.put(tid.value(), targetType));
         }
         for (var entry : object.data().values().entrySet()) {
             var field = plan.symbol(entry.getKey()).known().orElseThrow();
@@ -158,7 +165,7 @@ final class DbBaseProjection {
                         || !(entry.getValue() instanceof Reference reference)) {
                     throw DbMapping.unsupported("base-model export of role " + field.header().name());
                 }
-                references.add(new ProjectedRole(association.target(), association.role().name().declared().toString(),
+                references.add(new ProjectedReference(association.target(), association.role().name().declared().toString(),
                         "object " + object.identity().tid().orElseThrow().value(), reference.target().value()));
                 values.put(entry.getKey(), reference);
             }
@@ -198,26 +205,39 @@ final class DbBaseProjection {
             token.throwIfCancellationRequested();
             var target = projectedObjects.get(reference.targetTid());
             if (target == null || !mapping.isAssignableTo(target, reference.targetType())) {
-                throw new DbException("Missing projected target " + reference.targetTid() + " at " + reference.role()
+                throw new DbException("Missing projected target " + reference.targetTid() + " at " + reference.field()
                         + " of " + reference.source() + " in basket " + basket.value());
             }
         }
     }
 
-    private static void checkStructure(TransferPlan plan, TransferValue value, Set<SymbolRef> models, AttributeSlot field) {
+    private void checkStructure(TransferValue value, AttributeSlot field, String path, TransferObject owner) {
+        var plan = mapping.plan();
         switch (value) {
             case Structured structure -> {
                 var type = plan.object(structure.type()).orElseThrow();
-                if (!models.contains(type.model())) {
-                    throw DbMapping.unsupported("base-model export of structure " + type.name().declared()
-                            + " at " + field.name().declared());
+                if (!outputModels.contains(type.model())) {
+                    throw DbMapping.unsupported("base-model export of structure " + type.name().declared() + " at " + path);
                 }
-                structure.values().values().forEach(part -> checkStructure(plan, part, models, field));
+                for (var slot : type.slots()) {
+                    if (slot instanceof AttributeSlot component) {
+                        structure.value(component.symbol()).ifPresent(part ->
+                                checkStructure(part, component, path + "." + component.name().declared().last(), owner));
+                    }
+                }
             }
             case TransferValue.Repeated elements ->
-                    elements.values().forEach(part -> checkStructure(plan, part, models, field));
-            case TransferValue.Reference ignored ->
-                    throw DbMapping.unsupported("base-model export of reference in " + field.name().declared());
+                    elements.values().forEach(part -> checkStructure(part, field, path, owner));
+            case Reference reference -> {
+                var type = plan.type(field.effectiveType()).known().orElseThrow();
+                if (!(type instanceof ReferenceType link) || link.external() || link.target().isEmpty()
+                        || !link.restrictions().isEmpty()) {
+                    throw DbMapping.unsupported("base-model export of reference in " + path);
+                }
+                var target = new SymbolRef(plan.snapshotId(), link.target().orElseThrow());
+                references.add(new ProjectedReference(target, path, "object " + owner.identity().tid().orElseThrow().value(),
+                        reference.target().value()));
+            }
             default -> { }
         }
     }
