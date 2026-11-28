@@ -9,5 +9,14 @@ MODEL RoleBase24 AT "https://example.org/interlis/db" VERSION "1" =
       Mark -- {0..1} Marker;
       AssignedSurvey -- {0..1} Survey;
     END Assignment;
+    CLASS Archive (ABSTRACT) = END Archive;
+    CLASS MainArchive EXTENDS Archive = END MainArchive;
+    CLASS Document = END Document;
+    ASSOCIATION Filing =
+      FiledAt -- {0..1} Archive;
+      FiledDocument -- {0..*} Document;
+      Remark : TEXT*30;
+      Priority : 0 .. 99;
+    END Filing;
   END Data;
 END RoleBase24.

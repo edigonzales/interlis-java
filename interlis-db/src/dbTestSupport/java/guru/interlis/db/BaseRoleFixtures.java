@@ -6,9 +6,11 @@ import org.w3c.dom.Element;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 
 import static guru.interlis.db.DbTestSupport.assertLocalReference;
 import static guru.interlis.db.DbTestSupport.assertSchemaWithIdentityColumns;
+import static guru.interlis.db.DbTestSupport.catalogKeys;
 import static guru.interlis.db.DbTestSupport.child;
 import static guru.interlis.db.DbTestSupport.children;
 import static guru.interlis.db.DbTestSupport.id;
@@ -49,6 +51,12 @@ final class BaseRoleFixtures {
         return Files.writeString(work.resolve("field-marker.xtf"), Files.readString(delivery).replace(fixed, field));
     }
 
+    Path deliveryWithDroppedArchive() throws Exception {
+        String main = version == 23 ? base + ".Data.MainArchive" : "b:MainArchive";
+        String field = version == 23 ? extension + ".Work.FieldArchive" : "e:FieldArchive";
+        return Files.writeString(work.resolve("field-archive.xtf"), Files.readString(delivery).replace(main, field));
+    }
+
     void assertProjection(Path output) throws Exception {
         var data = readDataSection(output, version);
         assertEquals(List.of(base), headerModels(data, version));
@@ -61,6 +69,17 @@ final class BaseRoleFixtures {
         assertLocalReference(survey, "Mark", version, "mark");
         assertNull(child(object(projected, "Survey", "unassigned"), "Mark"));
         object(projected, "FixedMarker", "mark");
+
+        var detailed = object(projected, "Document", "detailed");
+        assertLocalReference(detailed, "FiledAt", version, "archive");
+        var payload = children(child(detailed, "FiledAt")).getFirst();
+        assertName(payload, version, base + ".Data.Filing");
+        assertEquals("registered", child(payload, "Remark").getTextContent());
+        assertEquals("9", child(payload, "Priority").getTextContent());
+        var direct = object(projected, "Document", "direct");
+        assertLocalReference(direct, "FiledAt", version, "archive");
+        assertEquals(List.of(), children(child(direct, "FiledAt")));
+        assertNull(child(object(projected, "Document", "unfiled"), "FiledAt"));
     }
 
     private Element object(Element basket, String type, String tid) {
@@ -76,6 +95,20 @@ final class BaseRoleFixtures {
             assertEquals("mark", scalar(sql, "SELECT m.t_ili_tid FROM " + surveys + " s JOIN " + db.table("marker")
                     + " m ON s.mark=m.t_id AND s.t_basket=m.t_basket WHERE s.t_ili_tid='survey'"));
             assertEquals("unassigned", scalar(sql, "SELECT t_ili_tid FROM " + surveys + " WHERE mark IS NULL"));
+
+            String documents = db.table("document");
+            String filings = db.table("filing");
+            String filedDocuments = " FROM " + filings + " f JOIN " + documents
+                    + " d ON f.fileddocument=d.t_id AND f.t_basket=d.t_basket";
+            assertEquals(Set.of("detailed:archive", "direct:archive"),
+                    catalogKeys(sql, "SELECT d.t_ili_tid || ':' || a.t_ili_tid" + filedDocuments
+                            + " JOIN " + db.table("archive") + " a ON f.filedat=a.t_id AND f.t_basket=a.t_basket"));
+            assertEquals("registered:9", scalar(sql, "SELECT f.remark || ':' || f.priority" + filedDocuments
+                    + " WHERE d.t_ili_tid='detailed'"));
+            assertEquals("direct", scalar(sql, "SELECT d.t_ili_tid" + filedDocuments
+                    + " WHERE f.remark IS NULL AND f.priority IS NULL"));
+            assertEquals("unfiled", scalar(sql, "SELECT d.t_ili_tid FROM " + documents
+                    + " d WHERE NOT EXISTS (SELECT 1 FROM " + filings + " f WHERE f.fileddocument=d.t_id)"));
         }
     }
 }

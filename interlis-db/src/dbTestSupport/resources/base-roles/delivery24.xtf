@@ -12,6 +12,12 @@
       </e:LocalSurvey>
       <b:Survey i:tid="unassigned"><b:Memo>planned</b:Memo></b:Survey>
       <b:FixedMarker i:tid="mark"/>
+      <b:Document i:tid="detailed">
+        <b:FiledAt i:ref="archive"><b:Filing><b:Remark>registered</b:Remark><b:Priority>9</b:Priority></b:Filing></b:FiledAt>
+      </b:Document>
+      <b:Document i:tid="direct"><b:FiledAt i:ref="archive"/></b:Document>
+      <b:Document i:tid="unfiled"/>
+      <b:MainArchive i:tid="archive"/>
     </e:Work>
   </i:datasection>
 </i:transfer>

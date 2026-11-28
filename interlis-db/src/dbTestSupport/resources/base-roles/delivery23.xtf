@@ -12,6 +12,12 @@
       </RoleExtension23.Work.LocalSurvey>
       <RoleBase23.Data.Survey TID="unassigned"><Memo>planned</Memo></RoleBase23.Data.Survey>
       <RoleBase23.Data.FixedMarker TID="mark"/>
+      <RoleBase23.Data.Document TID="detailed">
+        <FiledAt REF="archive"><RoleBase23.Data.Filing><Remark>registered</Remark><Priority>9</Priority></RoleBase23.Data.Filing></FiledAt>
+      </RoleBase23.Data.Document>
+      <RoleBase23.Data.Document TID="direct"><FiledAt REF="archive"/></RoleBase23.Data.Document>
+      <RoleBase23.Data.Document TID="unfiled"/>
+      <RoleBase23.Data.MainArchive TID="archive"/>
     </RoleExtension23.Work>
   </DATASECTION>
 </TRANSFER>

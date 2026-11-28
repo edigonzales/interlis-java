@@ -447,9 +447,12 @@ für einen einzelnen Zieltyp ohne `RESTRICTION`.
 
 Lokale, ungeordnete 1:1- und 1:n-Rollen ohne eigene
 Assoziationsattribute behalten den Zielverweis, wenn beide Endobjekte
-im projizierten Basket liegen. Das gilt auch für lokale, ungeordnete anonyme
-n:m-Links des Basismodells mit skalaren Attributen. Fehlt ein Ziel, bleibt
-die bestehende Exportdatei erhalten. Klassen ohne übertragbare Basisklasse entfallen.
+im projizierten Basket liegen. Lokale, ungeordnete 1:n-Rollen erhalten auch
+skalare Assoziationsattribute, wenn die speichernde Klasse keine Untertypen
+hat. Lokale, ungeordnete anonyme n:m-Links des Basismodells behalten beide
+Zielverweise und ihre skalaren Attribute. Fehlt ein Ziel, bleibt die
+bestehende Exportdatei erhalten. Klassen ohne übertragbare Basisklasse
+entfallen.
 Die Zieldatei deklariert das Basismodell.
 Für jeden ausgewählten Basket muss unter denselben Identitätsregeln ein
 konkretes Basistopic erreichbar sein.

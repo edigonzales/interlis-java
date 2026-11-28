@@ -45,20 +45,21 @@ final class DbBaseProjection {
     DbBaseProjection(DbMapping mapping, TopicDescriptor topic) {
         this.mapping = mapping;
         this.topic = topic;
-        outputModels = mapping.plan().modelImportClosure(Set.of(topic.model()));
+        var plan = mapping.plan();
+        outputModels = plan.modelImportClosure(Set.of(topic.model()));
         for (var association : mapping.associations()) {
             var owner = association.ownerRole();
             var target = association.targetRole();
-            if (!association.linkTable() && target.single()
+            if ((!association.linkTable() || !owner.single() && hasOnlyScalarAttributes(plan, association))
+                    && target.single()
                     && owner.targets().size() == 1 && target.targets().size() == 1
                     && !owner.external() && !target.external() && !association.ordered()
                     && !association.role().role().ordered()
                     && association.object().baseType().isEmpty()
-                    && association.object().topic().filter(declared -> belongsTo(mapping.plan(), declared, topic)).isPresent()) {
+                    && association.object().topic().filter(declared -> belongsTo(plan, declared, topic)).isPresent()) {
                 roles.put(association.role().symbol(), association);
             }
         }
-        var plan = mapping.plan();
         for (var table : mapping.tables()) {
             var association = table.object();
             if (association.kind() != SymbolKind.ASSOCIATION || table.carriesObjectId()
@@ -77,6 +78,15 @@ final class DbBaseProjection {
                 .filter(table -> table.object().kind() == SymbolKind.STRUCTURE && outputModels.contains(table.object().model()))
                 .flatMap(table -> table.columns().stream())
                 .anyMatch(column -> column.kind() == DbMapping.Kind.REFERENCE && !column.external());
+    }
+
+    private static boolean hasOnlyScalarAttributes(TransferPlan plan, DbMapping.EmbeddedAssociation association) {
+        return association.object().slots().stream().filter(AttributeSlot.class::isInstance).map(AttributeSlot.class::cast)
+                .filter(slot -> !slot.attribute().transientAttribute())
+                .allMatch(slot -> switch (plan.type(slot.effectiveType()).known().orElseThrow().kind()) {
+                    case TEXT, BOOLEAN, NUMERIC, ENUMERATION, FORMATTED, OID, BLACKBOX -> true;
+                    default -> false;
+                });
     }
 
     static TopicDescriptor topic(TransferPlan plan, TopicDescriptor source, List<SymbolRef> models) {
@@ -161,16 +171,25 @@ final class DbBaseProjection {
                     .flatMap(plan::object).flatMap(association -> association.topic())
                     .filter(declared -> belongsTo(plan, declared, topic)).isPresent()) {
                 var association = roles.get(entry.getKey());
-                if (association == null || !mapping.isAssignableTo(target.symbol(), association.owner())
-                        || !(entry.getValue() instanceof Reference reference)) {
+                if (association == null || !mapping.isAssignableTo(target.symbol(), association.owner())) {
                     throw DbMapping.unsupported("base-model export of role " + field.header().name());
                 }
+                var reference = embeddedReference(association, entry.getValue());
                 references.add(new ProjectedReference(association.target(), association.role().name().declared().toString(),
                         "object " + object.identity().tid().orElseThrow().value(), reference.target().value()));
-                values.put(entry.getKey(), reference);
+                values.put(entry.getKey(), entry.getValue());
             }
         }
         return Optional.of(new TransferObject(object.identity(), new Structured(target.symbol(), values)));
+    }
+
+    private static Reference embeddedReference(DbMapping.EmbeddedAssociation association, TransferValue value) {
+        if (association.linkTable() && value instanceof Structured payload
+                && payload.type().equals(association.object().symbol())) {
+            value = payload.values().get(association.role().symbol());
+        }
+        if (value instanceof Reference reference) return reference;
+        throw DbMapping.unsupported("base-model export of role " + association.role().name().declared());
     }
 
     private Optional<TransferValue> projectEnum(AttributeSlot source, AttributeSlot target, TransferObject object) {
