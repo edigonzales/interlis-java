@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="interop">
+    <MODELS>
+      <MODEL NAME="Terrain23" VERSION="1" URI="https://example.org/interlis/db"/>
+      <MODEL NAME="RegionalTerrain23" VERSION="1" URI="https://example.org/interlis/db"/>
+    </MODELS>
+  </HEADERSECTION>
+  <DATASECTION>
+    <RegionalTerrain23.Region BID="terrain-basket">
+      <RegionalTerrain23.Region.RegionalTrack TID="straight">
+        <Trace><POLYLINE>
+          <COORD><C1>2600100.125</C1><C2>1200100.375</C2><C3>20.125</C3></COORD>
+          <COORD><C1>2600110.250</C1><C2>1200120.500</C2><C3>-11.250</C3></COORD>
+        </POLYLINE></Trace>
+        <Label>regional</Label>
+      </RegionalTerrain23.Region.RegionalTrack>
+      <RegionalTerrain23.Region.RegionalTrack TID="curved">
+        <Trace><POLYLINE>
+          <COORD><C1>2600200.125</C1><C2>1200200.375</C2><C3>2.125</C3></COORD>
+          <ARC><C1>2600240.125</C1><C2>1200200.375</C2><C3>30.125</C3><A1>2600220.125</A1><A2>1200210.375</A2></ARC>
+        </POLYLINE></Trace>
+      </RegionalTerrain23.Region.RegionalTrack>
+      <RegionalTerrain23.Region.RegionalTrack TID="absent"/>
+    </RegionalTerrain23.Region>
+  </DATASECTION>
+</TRANSFER>

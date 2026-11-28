@@ -1,0 +1,9 @@
+INTERLIS 2.3;
+MODEL RegionalTerrain23 (en) AT "https://example.org/interlis/db" VERSION "1" =
+  IMPORTS Terrain23;
+  TOPIC Region EXTENDS Terrain23.Data =
+    CLASS RegionalTrack EXTENDS Terrain23.Data.Track =
+      Label : TEXT*16;
+    END RegionalTrack;
+  END Region;
+END RegionalTerrain23.

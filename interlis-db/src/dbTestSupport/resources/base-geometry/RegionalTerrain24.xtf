@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<i:transfer xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS"
+    xmlns="http://www.interlis.ch/xtf/2.4/RegionalTerrain24"
+    xmlns:b="http://www.interlis.ch/xtf/2.4/Terrain24"
+    xmlns:g="http://www.interlis.ch/geometry/1.0">
+  <i:headersection>
+    <i:models><i:model>Terrain24</i:model><i:model>RegionalTerrain24</i:model></i:models>
+    <i:sender>interop</i:sender>
+  </i:headersection>
+  <i:datasection>
+    <Region i:bid="terrain-basket">
+      <RegionalTrack i:tid="straight">
+        <b:Trace><g:polyline>
+          <g:coord><g:c1>2600100.125</g:c1><g:c2>1200100.375</g:c2><g:c3>20.125</g:c3></g:coord>
+          <g:coord><g:c1>2600110.250</g:c1><g:c2>1200120.500</g:c2><g:c3>-11.250</g:c3></g:coord>
+        </g:polyline></b:Trace>
+        <Label>regional</Label>
+      </RegionalTrack>
+      <RegionalTrack i:tid="curved">
+        <b:Trace><g:polyline>
+          <g:coord><g:c1>2600200.125</g:c1><g:c2>1200200.375</g:c2><g:c3>2.125</g:c3></g:coord>
+          <g:arc><g:c1>2600240.125</g:c1><g:c2>1200200.375</g:c2><g:c3>30.125</g:c3><g:a1>2600220.125</g:a1><g:a2>1200210.375</g:a2></g:arc>
+        </g:polyline></b:Trace>
+      </RegionalTrack>
+      <RegionalTrack i:tid="absent"/>
+    </Region>
+  </i:datasection>
+</i:transfer>

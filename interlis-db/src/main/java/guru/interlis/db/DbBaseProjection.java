@@ -5,6 +5,8 @@ import guru.interlis.model.CollectionKind;
 import guru.interlis.model.CoordinateType;
 import guru.interlis.model.EnumerationType;
 import guru.interlis.model.EnumerationValue;
+import guru.interlis.model.GeometryKind;
+import guru.interlis.model.GeometryType;
 import guru.interlis.model.OidRule;
 import guru.interlis.model.RoleAggregation;
 import guru.interlis.model.SymbolKind;
@@ -123,6 +125,11 @@ final class DbBaseProjection {
                 case TEXT, BOOLEAN, NUMERIC, ENUMERATION, FORMATTED, OID, BLACKBOX -> { }
                 case COORDINATE -> {
                     if (((CoordinateType) type).multiCoordinate()) {
+                        throw DbMapping.unsupported("base-model export of " + field.name().declared());
+                    }
+                }
+                case GEOMETRY -> {
+                    if (((GeometryType) type).geometryKind() != GeometryKind.POLYLINE) {
                         throw DbMapping.unsupported("base-model export of " + field.name().declared());
                     }
                 }
