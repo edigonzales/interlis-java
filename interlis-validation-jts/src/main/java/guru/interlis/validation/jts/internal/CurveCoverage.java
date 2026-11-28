@@ -60,6 +60,9 @@ final class CurveCoverage {
         remaining[0] = maxAreaComponents;
 
         var faces = new ArrayList<Face>();
+        // The normalized rings keep these orientations for the lifetime of this coverage check.
+        var orientations = new IdentityHashMap<Ring, Integer>();
+        var inputOrientations = new IdentityHashMap<Ring, Integer>();
         var index = new STRtree();
         var status = VALID;
         boolean complete = source.complete();
@@ -87,7 +90,8 @@ final class CurveCoverage {
                 var adapted = new TransferGeometryAdapter(input, limited, origin).read();
                 var validity = new CurveValidity(input, new GeometryEngine.Control(control.visit(),
                         source.reportLocalFindings() ? control.findings() : ignored -> {}));
-                var state = validity.check(adapted);
+                inputOrientations.clear();
+                var state = validity.check(adapted, inputOrientations);
                 if (state != VALID) {
                     status = combine(status, state);
                     continue;
@@ -97,6 +101,7 @@ final class CurveCoverage {
                     status = combine(status, UNSUPPORTED);
                     continue;
                 }
+                orientations.putAll(inputOrientations);
                 for (var surface : validity.checkedSurfaces()) {
                     var bounds = new Envelope();
                     for (var segment : CurveValidity.flat(surface.shell())) {
@@ -118,6 +123,8 @@ final class CurveCoverage {
         int pairs = 0;
         for (int i = 0; i < faces.size(); i++) {
             var first = faces.get(i);
+            // Keep at most the first face's point-location indices across comparisons.
+            CurveValidity.SurfaceLocator firstLocator = null;
             for (Object candidate : index.query(first.bounds())) {
                 control.visit().run();
                 int j = (Integer) candidate;
@@ -128,9 +135,13 @@ final class CurveCoverage {
                     throw new ValidationLimitException("Geometry coverage exceeds its face pair budget");
                 }
                 var second = faces.get(j);
+                if (firstLocator == null) {
+                    firstLocator = new CurveValidity.SurfaceLocator(first.surface());
+                }
+                var secondLocator = new CurveValidity.SurfaceLocator(second.surface());
                 var validity = new CurveValidity(second.source(), control);
-                var pair = validity.coveragePair(first.surface(), first.source(), second.surface(), overlap, origin,
-                        traceBoundary);
+                var pair = validity.coveragePair(firstLocator, first.source(), secondLocator, orientations,
+                        overlap, origin, traceBoundary);
                 status = combine(status, pair.check());
                 pair.submerged().forEach((segment, spans) ->
                         submerged.computeIfAbsent(segment, ignored -> new ArrayList<>()).addAll(spans));

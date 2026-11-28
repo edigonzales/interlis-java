@@ -80,6 +80,10 @@ final class CurveValidity {
     }
 
     GeometryEngine.Check check(Result value) {
+        return check(value, null);
+    }
+
+    GeometryEngine.Check check(Result value, Map<Ring, Integer> orientations) {
         control.visit().run();
         origin = value.origin();
         if (value.check() != VALID) {
@@ -99,7 +103,7 @@ final class CurveValidity {
         }
         if (!input.partial()) {
             for (Surface surface : value.surfaces()) {
-                checkedSurfaces.add(surface(surface));
+                checkedSurfaces.add(surface(surface, orientations));
             }
             for (int i = 0; i < value.surfaces().size(); i++) {
                 for (int j = 0; j < i; j++) {
@@ -110,7 +114,7 @@ final class CurveValidity {
         return input.partial() && status == VALID ? MISSING_PARAMETERS : status;
     }
 
-    private Surface surface(Surface surface) {
+    private Surface surface(Surface surface, Map<Ring, Integer> orientations) {
         var rings = rings(surface);
         List<List<Segment>> segments = new ArrayList<>();
         for (Ring ring : rings) {
@@ -135,6 +139,9 @@ final class CurveValidity {
                 selfIntersections(boundary, true, false);
             }
             int orientation = areaOrientation(boundary, control.visit());
+            if (orientations != null) {
+                orientations.put(ring, orientation);
+            }
             if (orientation == 0 && boundary.stream().anyMatch(segment -> segment.curve() instanceof CircularArc)) {
                 uncertain();
             } else if (orientation == 0 && status != INVALID) {
@@ -572,14 +579,15 @@ final class CurveValidity {
     }
 
     private void compareSurfaces(Surface first, Surface second) {
-        statusAfterCoverage(first, second, false, false);
+        statusAfterCoverage(new SurfaceLocator(first), new SurfaceLocator(second), null, false);
     }
 
-    private PairBoundaries compareSurfaces(Surface first, Surface second, boolean allowShared) {
+    private PairBoundaries compareSurfaces(Surface first, Surface second, Map<Ring, Integer> orientations) {
         control.visit().run();
         var left = rings(first);
         var right = rings(second);
         var pair = new PairBoundaries();
+        boolean allowShared = orientations != null;
         for (int i = 0; i < left.size(); i++) {
             var a = flat(left.get(i));
             for (int j = 0; j < right.size(); j++) {
@@ -587,8 +595,8 @@ final class CurveValidity {
                 var b = flat(right.get(j));
                 Optional<Boolean> sameSide = Optional.empty();
                 if (allowShared) {
-                    int leftOrientation = areaOrientation(a, control.visit());
-                    int rightOrientation = areaOrientation(b, control.visit());
+                    int leftOrientation = orientations.get(left.get(i));
+                    int rightOrientation = orientations.get(right.get(j));
                     if (leftOrientation == 0 || rightOrientation == 0) {
                         uncertain();
                     } else {
@@ -603,30 +611,31 @@ final class CurveValidity {
 
     record CoveragePair(GeometryEngine.Check check, Map<Segment, List<Span>> submerged) {}
 
-    CoveragePair coveragePair(Surface first, GeometryEngine.Input firstSource, Surface second,
-                              Optional<LensHeight.Tolerance> tolerance, TransferGeometryAdapter.Position projectionOrigin,
-                              boolean traceBoundary) {
+    CoveragePair coveragePair(SurfaceLocator first, GeometryEngine.Input firstSource, SurfaceLocator second,
+                              Map<Ring, Integer> orientations, Optional<LensHeight.Tolerance> tolerance,
+                              TransferGeometryAdapter.Position projectionOrigin, boolean traceBoundary) {
         relatedSource = firstSource;
         overlap = tolerance;
         origin = projectionOrigin;
-        return new CoveragePair(statusAfterCoverage(first, second, true, traceBoundary), submerged);
+        return new CoveragePair(statusAfterCoverage(first, second, orientations, traceBoundary), submerged);
     }
 
     private final Map<Segment, List<Span>> submerged = new IdentityHashMap<>();
 
-    private GeometryEngine.Check statusAfterCoverage(Surface first, Surface second, boolean allowShared, boolean traceBoundary) {
-        var pair = compareSurfaces(first, second, allowShared);
+    private GeometryEngine.Check statusAfterCoverage(SurfaceLocator first, SurfaceLocator second,
+                                                     Map<Ring, Integer> orientations, boolean traceBoundary) {
+        var pair = compareSurfaces(first.surface, second.surface, orientations);
         if (status != INVALID) {
-            within(first, second, pair, traceBoundary, false);
+            within(first, second.surface, pair, traceBoundary, false);
         }
         if (status != INVALID) {
-            within(second, first, pair, traceBoundary, true);
+            within(second, first.surface, pair, traceBoundary, true);
         }
         return status;
     }
 
-    private void within(Surface container, Surface other, PairBoundaries pair, boolean traceBoundary, boolean reverse) {
-        var locator = new SurfaceLocator(container);
+    private void within(SurfaceLocator locator, Surface other, PairBoundaries pair, boolean traceBoundary, boolean reverse) {
+        var container = locator.surface;
         for (var ring : rings(other)) {
             for (var segment : flat(ring)) {
                 control.visit().run();
@@ -670,7 +679,7 @@ final class CurveValidity {
     private Containment probe(SurfaceLocator locator, CurveSegment curve, Span fragment, Set<Point> contacts) {
         for (var endpoint : List.of(fragment.start(), fragment.end())) {
             if (!contacts.contains(endpoint)) {
-                var position = locator.locate(endpoint);
+                var position = locate(locator, endpoint);
                 if (position == Position.INSIDE || position == Position.OUTSIDE) {
                     return new Containment(endpoint, position);
                 }
@@ -679,7 +688,7 @@ final class CurveValidity {
         if (!(curve instanceof CircularArc)) {
             if (fragment.start().equals(curve.start()) && fragment.end().equals(curve.end())) {
                 var middle = CurvePointLocation.midpoint(curve);
-                return new Containment(middle, locator.locate(middle));
+                return new Containment(middle, locate(locator, middle));
             }
         }
         for (int digits = Interval.INITIAL_DIGITS; digits <= Interval.MAX_DIGITS; digits *= 2) {
@@ -712,7 +721,7 @@ final class CurveValidity {
             }
             if (separated(locator.surface, x, y)) {
                 var middle = new Point(x.middle(), y.middle());
-                return new Containment(middle, locator.locate(middle));
+                return new Containment(middle, locate(locator, middle));
             }
         }
         uncertain();
@@ -748,7 +757,15 @@ final class CurveValidity {
         return true;
     }
 
-    private final class SurfaceLocator {
+    private Position locate(SurfaceLocator locator, Point point) {
+        var position = locator.locate(point, control.visit());
+        if (position == Position.UNDETERMINED) {
+            uncertain();
+        }
+        return position;
+    }
+
+    static final class SurfaceLocator {
         private final Surface surface;
         private final CurvePointLocation.PreparedRing shell;
         private final List<CurvePointLocation.PreparedRing> holes;
@@ -760,13 +777,13 @@ final class CurveValidity {
                     .map(ring -> new CurvePointLocation.PreparedRing(flat(ring))).toList();
         }
 
-        Position locate(Point point) {
-            var outer = locate(shell, point);
+        Position locate(Point point, Runnable visit) {
+            var outer = shell.locate(point, visit);
             if (outer != Position.INSIDE) {
                 return outer;
             }
             for (var hole : holes) {
-                var position = locate(hole, point);
+                var position = hole.locate(point, visit);
                 if (position != Position.OUTSIDE) {
                     return position == Position.INSIDE ? Position.OUTSIDE : position;
                 }
@@ -774,13 +791,6 @@ final class CurveValidity {
             return Position.INSIDE;
         }
 
-        private Position locate(CurvePointLocation.PreparedRing ring, Point point) {
-            var position = ring.locate(point, control.visit());
-            if (position == Position.UNDETERMINED) {
-                uncertain();
-            }
-            return position;
-        }
     }
 
     static List<Fragment> fragments(CurveSegment curve, List<Span> spans, Runnable visit) {

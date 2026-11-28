@@ -38,6 +38,29 @@ class CurveCoverageTest {
                 input("innerIsland", rectangle("8", "8", "12", "12")),
                 input("secondIsland", rectangle("2.5", "3", "3.5", "4")),
                 input("outside", rectangle("21", "21", "22", "22")));
+        var findings = new ArrayList<GeometryEngine.Finding>();
+        assertEquals(GeometryEngine.Check.INVALID, checkCoverage(inputs, GeometryEngine.CoveragePurpose.AREA_WITHOUT_GAPS,
+                findings));
+        assertEquals(2, findings.size());
+        assertGap(findings.getFirst(), "shell", "18", "2", Set.of("outerIsland", "secondIsland"));
+        assertGap(findings.getLast(), "outerIsland", "14", "6", Set.of("innerIsland"));
+    }
+
+    @Test
+    void reportsCrossingsWithTheNextNeighbourAfterMatchingASharedEdge() {
+        var inputs = List.of(
+                input("middle", rectangle("10", "10", "20", "20")),
+                input("west", rectangle("5", "10", "10", "20")),
+                input("east", rectangle("18", "16", "24", "18")));
+        var findings = new ArrayList<GeometryEngine.Finding>();
+        assertEquals(GeometryEngine.Check.INVALID, checkCoverage(inputs, GeometryEngine.CoveragePurpose.AREA, findings));
+        assertEquals(2, findings.size());
+        assertCrossing(findings.getFirst(), 1, "16");
+        assertCrossing(findings.getLast(), 3, "18");
+    }
+
+    private static GeometryEngine.Check checkCoverage(List<GeometryEngine.Input> inputs, GeometryEngine.CoveragePurpose purpose,
+                                                      List<GeometryEngine.Finding> findings) {
         var source = new GeometryEngine.Source() {
             @Override public boolean complete() {
                 return true;
@@ -54,13 +77,22 @@ class CurveCoverageTest {
                 };
             }
         };
-        var findings = new ArrayList<GeometryEngine.Finding>();
-        assertEquals(GeometryEngine.Check.INVALID, JtsGeometryEngine.standard().checkCoverage(
-                source, GeometryEngine.CoveragePurpose.AREA_WITHOUT_GAPS,
-                new GeometryEngine.Control(() -> {}, findings::add)));
-        assertEquals(2, findings.size());
-        assertGap(findings.getFirst(), "shell", "18", "2", Set.of("outerIsland", "secondIsland"));
-        assertGap(findings.getLast(), "outerIsland", "14", "6", Set.of("innerIsland"));
+        return JtsGeometryEngine.standard().checkCoverage(
+                source, purpose, new GeometryEngine.Control(() -> {}, findings::add));
+    }
+
+    private static void assertCrossing(GeometryEngine.Finding finding, int easternSegment, String y) {
+        assertEquals(ValidationCode.GEOMETRY_AREA_OVERLAP, finding.code());
+        assertEquals("east", tid(finding.location()));
+        assertEquals(path(1, easternSegment), finding.path());
+        var related = finding.relatedLocations();
+        assertEquals(1, related.size());
+        assertEquals("middle", tid(related.getFirst()));
+        assertEquals(path(1, 2), related.getFirst().path());
+        var witness = finding.witness().orElseThrow();
+        assertEquals(GeometryWitness.Kind.INTERSECTION, witness.kind());
+        assertEquals(0, new BigDecimal("20").compareTo(witness.x()));
+        assertEquals(0, new BigDecimal(y).compareTo(witness.y()));
     }
 
     private static void assertGap(GeometryEngine.Finding finding, String source, String x, String y, Set<String> islands) {
@@ -69,14 +101,14 @@ class CurveCoverageTest {
         assertEquals(0, new BigDecimal(x).compareTo(finding.witness().orElseThrow().x()));
         assertEquals(0, new BigDecimal(y).compareTo(finding.witness().orElseThrow().y()));
         assertEquals(GeometryWitness.Kind.GAP_BOUNDARY, finding.witness().orElseThrow().kind());
-        assertEquals(path(2), finding.path());
+        assertEquals(path(2, 1), finding.path());
         assertEquals(islands, finding.relatedLocations().stream().map(CurveCoverageTest::tid).collect(Collectors.toSet()));
-        finding.relatedLocations().forEach(location -> assertEquals(path(1), location.path()));
+        finding.relatedLocations().forEach(location -> assertEquals(path(1, 1), location.path()));
     }
 
-    private static List<GeometryComponent> path(int ring) {
+    private static List<GeometryComponent> path(int ring, int segment) {
         return List.of(new GeometryComponent(RING, ring), new GeometryComponent(LINE, 1),
-                new GeometryComponent(PART, 1), new GeometryComponent(SEGMENT, 1));
+                new GeometryComponent(PART, 1), new GeometryComponent(SEGMENT, segment));
     }
 
     private static String tid(DataLocation location) {
